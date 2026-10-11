@@ -1,0 +1,5 @@
+{
+  "board": "STM32H753I-EVAL",
+  "device": "STM32H753XIH6",
+  "toolchain": "CLANG"
+}

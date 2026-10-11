@@ -3,6 +3,9 @@ logs/
 cmake-build-*
 build-artifacts/
 build-fprime-*
+/fprimecubesat-bin
+/fprimecubesatTopologyDictionary.json
+yamcs-data/
 *-template
 *.template.cpp
 *.template.hpp
@@ -14,3 +17,5 @@ build-fprime-*
 /.vscode/
 .DS_Store
 *.gcov
+__pycache__/
+*.pyc
