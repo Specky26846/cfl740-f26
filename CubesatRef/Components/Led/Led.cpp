@@ -9,7 +9,7 @@ Led::Led(const char* const compName) : LedComponentBase(compName) {}
 Led::~Led() {}
 
 // command handler - toggle blinking on/off
-void Led::BLINKING_ON_OFF_cmdHandler(FwOpcodeType opCode, U32 cmdSeq, Fw::On onOff) {
+void Led::BLINKING_ON_OFF_cmdHandler(FwOpcodeType opCode, U32 cmdSeq, const Fw::On& onOff) {
     this->m_toggleCounter = 0;
     this->m_blinking = onOff;
     this->log_ACTIVITY_HI_SetBlinkingState(onOff);

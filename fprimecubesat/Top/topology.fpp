@@ -10,7 +10,7 @@ module fprimecubesat {
     rateGroup3
   }
 
-  topology fprimecubesat {
+  deployment topology fprimecubesat {
 
   # ----------------------------------------------------------------------
   # Subtopology imports

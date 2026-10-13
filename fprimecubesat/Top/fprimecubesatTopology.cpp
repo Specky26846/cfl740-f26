@@ -26,9 +26,9 @@ Svc::RateGroupDriver::DividerSet rateGroupDivisorsSet{{{10, 0}, {1, 0}, {4, 0}}}
 
 // Rate groups may supply a context token to each of the attached children whose purpose is set by the project. The
 // reference topology sets each token to zero as these contexts are unused in this project.
-U32 rateGroup1Context[Svc::ActiveRateGroup::CONNECTION_COUNT_MAX] = {};
-U32 rateGroup2Context[Svc::ActiveRateGroup::CONNECTION_COUNT_MAX] = {};
-U32 rateGroup3Context[Svc::ActiveRateGroup::CONNECTION_COUNT_MAX] = {};
+Svc::ActiveRateGroup::ContextArray rateGroup1Context(0);
+Svc::ActiveRateGroup::ContextArray rateGroup2Context(0);
+Svc::ActiveRateGroup::ContextArray rateGroup3Context(0);
 
 enum TopologyConstants {
     COMM_PRIORITY = 100,
@@ -46,9 +46,9 @@ void configureTopology() {
     rateGroupDriver.configure(rateGroupDivisorsSet);
 
     // Rate groups require context arrays.
-    rateGroup1.configure(rateGroup1Context, FW_NUM_ARRAY_ELEMENTS(rateGroup1Context));
-    rateGroup2.configure(rateGroup2Context, FW_NUM_ARRAY_ELEMENTS(rateGroup2Context));
-    rateGroup3.configure(rateGroup3Context, FW_NUM_ARRAY_ELEMENTS(rateGroup3Context));
+    rateGroup1.configure(rateGroup1Context);
+    rateGroup2.configure(rateGroup2Context);
+    rateGroup3.configure(rateGroup3Context);
 
     // Command sequencer needs to allocate memory to hold contents of command sequences
     cmdSeq.allocateBuffer(0, mallocator, 5 * 1024);
@@ -143,7 +143,7 @@ void startRateGroups(Fw::TimeInterval interval) {
     // This call will block until the stopRateGroups() call is made.
     // For this Linux demo, that call is made from a signal handler.
     // Set timer to 10Hz (100ms period)
-    timer.startTimer(interval.getSeconds() * 1000 + interval.getUSeconds() / 1000); // 100 ms = 10Hz
+    timer.startTimer(interval);  // 100 ms = 10Hz
 }
 
 void stopRateGroups() {

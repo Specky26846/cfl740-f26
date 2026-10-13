@@ -18,7 +18,7 @@ class Led final : public LedComponentBase {
     U32 m_toggleCounter = 0;
     Fw::On m_blinking = Fw::On::OFF;
 
-    void BLINKING_ON_OFF_cmdHandler(FwOpcodeType opCode, U32 cmdSeq, Fw::On onOff) override;
+    void BLINKING_ON_OFF_cmdHandler(FwOpcodeType opCode, U32 cmdSeq, const Fw::On& onOff) override;
     void run_handler(FwIndexType portNum, U32 context) override;
     void parameterUpdated(FwPrmIdType id) override;
 };
