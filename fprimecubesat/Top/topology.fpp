@@ -40,7 +40,6 @@ module fprimecubesat {
 
     # Manager instances
     instance systemManager
-    instance radioManager
     instance imuManager
     instance navigationManager
     instance magnetometerManager
@@ -51,7 +50,6 @@ module fprimecubesat {
     instance magI2cDriver
     instance gpsI2cDriver
     instance tempI2cDriver
-    instance radioSpiDriver
 
   # ----------------------------------------------------------------------
   # Pattern graph specifiers
@@ -140,8 +138,7 @@ module fprimecubesat {
       rateGroup1.RateGroupMemberOut[2] -> systemResources.run
       rateGroup1.RateGroupMemberOut[3] -> ComCcsds.comQueue.run
       rateGroup1.RateGroupMemberOut[5] -> systemManager.run
-      rateGroup1.RateGroupMemberOut[6] -> radioManager.run
-      rateGroup1.RateGroupMemberOut[7] -> tempManager.run
+      rateGroup1.RateGroupMemberOut[6] -> tempManager.run
       # imu/gps run here, not on the 10Hz group - see note in instances.fpp
       rateGroup1.RateGroupMemberOut[8] -> navigationManager.run
       rateGroup1.RateGroupMemberOut[9] -> imuManager.run
@@ -190,8 +187,6 @@ module fprimecubesat {
       navigationManager.healthOut -> systemManager.gpsHealth
       magnetometerManager.healthOut -> systemManager.magHealth
 
-      # Radio SPI bus connection
-      radioManager.spiReadWrite -> radioSpiDriver.SpiReadWrite
     }
 
     connections fprimecubesat {

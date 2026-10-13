@@ -15,7 +15,7 @@ module Managers {
         signal disableSim   # go back to real reads (re-probes on the way)
 
         action doInit          # write to 0xff and confirm the gps acks it
-        action doRead          # poll nav-pvt, parse lat/lon/alt/speed/sats, push telemetry
+        action doRead          # drain nmea, parse gga/rmc for lat/lon/alt/speed/sats, push telemetry
         action doFaultRecovery # retry the full read; signal success if the bus comes back
         action doSimRead       # hardcoded ann arbor coords (42.28, -83.74, 270m)
 
@@ -27,7 +27,7 @@ module Managers {
         }
 
         state RUNNING {
-            on tick do { doRead }   # request nav-pvt and push telemetry every tick
+            on tick do { doRead }   # read nmea and push telemetry every tick
             on fault enter FAULT    # any i2c failure or bad checksum goes here
             on enableSim enter SIM
         }

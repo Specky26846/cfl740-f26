@@ -1,6 +1,6 @@
 module Managers {
 
-    # reads neo-m9n gps over i2c using ubx binary protocol
+    # reads neo-m9n gps over i2c using nmea (gga + rmc)
     active component NavigationManager {
 
         state machine instance navSm: NavigationManagerStateMachine

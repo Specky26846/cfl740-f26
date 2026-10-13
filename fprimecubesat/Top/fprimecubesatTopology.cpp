@@ -96,10 +96,12 @@ void configureTopology() {
     }
 
     // SPI driver for Radio - Raspberry Pi 4 SPI bus 0, chip select 0
+    /*
     bool spiOk = radioSpiDriver.open(0, 0, Drv::SPI_FREQUENCY_1MHZ);
     if (!spiOk) {
         Fw::Logger::log("[ERROR] Failed to open SPI for Radio\n");
     }
+    */
 
     // Configure manager I2C addresses
     imuManager.configure(0x68);

@@ -24,7 +24,9 @@ void Led::parameterUpdated(FwPrmIdType id) {
     switch (id) {
         case PARAMID_BLINK_INTERVAL: {
             const U32 interval = this->paramGet_BLINK_INTERVAL(isValid);
-            FW_ASSERT(isValid == Fw::ParamValid::VALID, static_cast<FwAssertArgType>(isValid));
+            // DEFAULT is expected when the param DB has no saved value yet
+            FW_ASSERT((isValid == Fw::ParamValid::VALID) || (isValid == Fw::ParamValid::DEFAULT),
+                      static_cast<FwAssertArgType>(isValid));
             this->log_ACTIVITY_HI_BlinkIntervalSet(interval);
             break;
         }
