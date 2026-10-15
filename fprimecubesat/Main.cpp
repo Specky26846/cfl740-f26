@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
 
     // Setup, cycle, and teardown topology
     fprimecubesat::setupTopology(inputs);
-    fprimecubesat::startRateGroups(Fw::TimeInterval(1,0));  // Program loop cycling rate groups at 1Hz
+    fprimecubesat::startRateGroups(Fw::TimeInterval(0, 100000));  // 100ms base tick = 10Hz (see rateGroupDivisorsSet)
     fprimecubesat::teardownTopology(inputs);
     (void)printf("Exiting...\n");
     return 0;
