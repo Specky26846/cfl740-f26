@@ -14,9 +14,9 @@ module Managers {
         signal enableSim    # skip hardware, return sinusoidal fake imu data
         signal disableSim   # go back to real reads (re-probes on the way)
 
-        action doInit          # probe the mpu-6050 at ACCEL_XOUT_H to confirm it's there
+        action doInit          # wake the icm-20649 and probe ACCEL_XOUT_H to confirm it's there
         action doRead          # read 14 bytes from reg 0x2d, decode big-endian accel/gyro/temp, push telemetry
-        action doFaultRecovery # retry the read; signal success if the bus comes back
+        action doFaultRecovery # re-wake and retry the read; signal success if the bus comes back
         action doSimRead       # sinusoidal accel, gyro, and temp each tick
 
         state INIT {

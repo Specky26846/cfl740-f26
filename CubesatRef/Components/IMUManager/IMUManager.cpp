@@ -1,6 +1,7 @@
 // IMUManager.cpp
 
 #include <cmath>
+#include <unistd.h>
 #include "CubesatRef/Components/IMUManager/IMUManager.hpp"
 
 
@@ -30,7 +31,10 @@ void IMUManager::Managers_IMUManagerStateMachine_action_doInit(
 {
     FW_ASSERT(smId == SmId::imuSm);
     F32 ax = 0, ay = 0, az = 0, gx = 0, gy = 0, gz = 0, temp = 0;
-    Drv::I2cStatus status = this->readImuData(ax, ay, az, gx, gy, gz, temp);
+    Drv::I2cStatus status = this->wakeImu(); // chip is woken up on init
+    if (status == Drv::I2cStatus::I2C_OK) {
+        status = this->readImuData(ax, ay, az, gx, gy, gz, temp);
+    }
     if (status == Drv::I2cStatus::I2C_OK) {
         this->log_ACTIVITY_HI_StateChange(IMUManager_SensorState::RUNNING);
         this->imuSm_sendSignal_success();
@@ -74,7 +78,10 @@ void IMUManager::Managers_IMUManagerStateMachine_action_doFaultRecovery(
 {
     FW_ASSERT(smId == SmId::imuSm);
     F32 ax = 0, ay = 0, az = 0, gx = 0, gy = 0, gz = 0, temp = 0;
-    Drv::I2cStatus status = this->readImuData(ax, ay, az, gx, gy, gz, temp);
+    Drv::I2cStatus status = this->wakeImu(); // chip is re-woken if there is a fault
+    if (status == Drv::I2cStatus::I2C_OK) {
+        status = this->readImuData(ax, ay, az, gx, gy, gz, temp);
+    }
     if (status == Drv::I2cStatus::I2C_OK) {
         this->log_ACTIVITY_HI_StateChange(IMUManager_SensorState::RUNNING);
         if (this->isConnected_healthOut_OutputPort(0)) {
@@ -126,7 +133,28 @@ void IMUManager::DISABLE_SIM_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
 }
 
-// burst read 14 bytes from ACCEL_XOUT_H: ax(2), ay(2), az(2), temp(2), gx(2), gy(2), gz(2) - big-endian signed
+// ICM-20649 boots into sleep mode by default to save power
+// select bank 0, then clear the sleep bit in PWR_MGMT_1. without this the icm-20649 stays
+// asleep - reads still ACK but every data register is 0 (which decodes to a plausible-looking 20.94C temp)
+Drv::I2cStatus IMUManager::wakeImu() {
+    U8 bankSel[2] = {REG_BANK_SEL, 0x00};
+    Fw::Buffer bankBuffer(bankSel, sizeof(bankSel));
+    Drv::I2cStatus status = this->busWrite_out(0, this->m_i2cAddress, bankBuffer);
+    if (status != Drv::I2cStatus::I2C_OK) {
+        return status;
+    }
+
+    U8 pwrMgmt[2] = {PWR_MGMT_1, PWR_MGMT_1_WAKE};
+    Fw::Buffer pwrBuffer(pwrMgmt, sizeof(pwrMgmt));
+    status = this->busWrite_out(0, this->m_i2cAddress, pwrBuffer);
+    if (status == Drv::I2cStatus::I2C_OK) {
+        usleep(50000);  // gyro start-up time is 35ms typical per datasheet, give it some margin
+    }
+    return status;
+}
+
+// burst read 14 bytes from ACCEL_XOUT_H: ax(2), ay(2), az(2), gx(2), gy(2), gz(2), temp(2) - big-endian signed
+// note the icm-20649 puts temp after gyro, unlike the mpu-6050 which puts it between accel and gyro
 Drv::I2cStatus IMUManager::readImuData(F32& ax, F32& ay, F32& az,
                                            F32& gx, F32& gy, F32& gz,
                                            F32& temp) {
@@ -139,23 +167,23 @@ Drv::I2cStatus IMUManager::readImuData(F32& ax, F32& ay, F32& az,
     Drv::I2cStatus status = this->busWriteRead_out(0, this->m_i2cAddress, writeBuffer, readBuffer);
 
     if (status == Drv::I2cStatus::I2C_OK) {
-        // combine MSB and LSB pairs into signed 16-bit values (big-endian from the mpu-6050)
+        // combine MSB and LSB pairs into signed 16-bit values (big-endian from the icm-20649)
         I16 rawAx   = static_cast<I16>((rawData[0]  << 8) | rawData[1]);
         I16 rawAy   = static_cast<I16>((rawData[2]  << 8) | rawData[3]);
         I16 rawAz   = static_cast<I16>((rawData[4]  << 8) | rawData[5]);
-        I16 rawTemp = static_cast<I16>((rawData[6]  << 8) | rawData[7]);
-        I16 rawGx   = static_cast<I16>((rawData[8]  << 8) | rawData[9]);
-        I16 rawGy   = static_cast<I16>((rawData[10] << 8) | rawData[11]);
-        I16 rawGz   = static_cast<I16>((rawData[12] << 8) | rawData[13]);
+        I16 rawGx   = static_cast<I16>((rawData[6]  << 8) | rawData[7]);
+        I16 rawGy   = static_cast<I16>((rawData[8]  << 8) | rawData[9]);
+        I16 rawGz   = static_cast<I16>((rawData[10] << 8) | rawData[11]);
+        I16 rawTemp = static_cast<I16>((rawData[12] << 8) | rawData[13]);
 
-        // scale factors from MPU-6050 datasheet for +-4g accel and +-500dps gyro (register 1C/1B settings)
+        // icm-20649 power-on defaults: ACCEL_FS_SEL=0 -> +-4g (8192 LSB/g), GYRO_FS_SEL=0 -> +-500dps (65.5 LSB/dps)
         ax = static_cast<F32>(rawAx) / 8192.0f;
         ay = static_cast<F32>(rawAy) / 8192.0f;
         az = static_cast<F32>(rawAz) / 8192.0f;
         gx = static_cast<F32>(rawGx) / 65.5f;
         gy = static_cast<F32>(rawGy) / 65.5f;
         gz = static_cast<F32>(rawGz) / 65.5f;
-        temp = (static_cast<F32>(rawTemp) - 21.0f) / 333.87f + 21.0f;  // from MPU-6050 register map section 4.19
+        temp = static_cast<F32>(rawTemp) / 333.87f + 21.0f;  // icm-20649 datasheet: (TEMP_OUT - RoomTemp_Offset)/333.87 + 21, offset 0
     }
 
     return status;

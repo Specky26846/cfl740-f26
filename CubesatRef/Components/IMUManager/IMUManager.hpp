@@ -15,10 +15,13 @@ class IMUManager final : public IMUManagerComponentBase {
     void configure(U32 i2cAddress);
 
   private:
-    U32 m_i2cAddress = 0x68;
+    U32 m_i2cAddress = 0x69;
 
     // icm-20649 register and read size
-    static constexpr U8 ACCEL_XOUT_H = 0x2D;
+    static constexpr U8 REG_BANK_SEL = 0x7F;
+    static constexpr U8 PWR_MGMT_1 = 0x06;     // bank 0
+    static constexpr U8 PWR_MGMT_1_WAKE = 0x01; // sleep bit cleared, auto-select best clock
+    static constexpr U8 ACCEL_XOUT_H = 0x2D;   // bank 0
     static constexpr U8 DATA_SIZE = 14;
 
     U32 m_simTick = 0;
@@ -39,6 +42,8 @@ class IMUManager final : public IMUManagerComponentBase {
     void DISABLE_SIM_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) override;
     void run_handler(FwIndexType portNum, U32 context) override;
 
+    // selects bank 0 and clears the sleep bit - chip powers up asleep with all data regs reading 0
+    Drv::I2cStatus wakeImu();
     // reads 14 bytes of accel/gyro/temp from icm-20649
     Drv::I2cStatus readImuData(F32& ax, F32& ay, F32& az,
                                 F32& gx, F32& gy, F32& gz,

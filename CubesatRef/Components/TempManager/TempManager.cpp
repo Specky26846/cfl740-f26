@@ -118,7 +118,7 @@ void TempManager::DISABLE_SIM_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
 
 // tmp102 returns a 12-bit signed value in the upper 12 bits of 2 bytes - shift right 4, sign-extend, scale by 0.0625
 Drv::I2cStatus TempManager::readRawTemp(F32& temperature) {
-    const U8 devAddr = 0x4a;  // ADD0 pin is tied to ground on our board, so address is 0x4a not the default 0x48
+    const U8 devAddr = 0x4b;  // ADD0 pin is tied to ground on our board, so address is 0x4a not the default 0x48
     const U8 tempReg = 0x00;  // temperature register
 
     U8 writeBuf[1] = {tempReg};

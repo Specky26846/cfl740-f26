@@ -75,9 +75,8 @@ module fprimecubesat {
   # ----------------------------------------------------------------------
   # Manager component instances (originally 10Hz rate group)
   #
-  # imuManager and navigationManager actually run on rateGroup1 (1Hz), and
-  # magnetometerManager on rateGroup3 (2.5Hz) - see connections RateGroups
-  # in topology.fpp. They were moved off the 10Hz group because blocking
+  # imuManager, navigationManager, and magnetometerManager actually run on
+  # rateGroup1 (1Hz) - see connections RateGroups in topology.fpp. They were moved off the 10Hz group because blocking
   # usleep() calls in the mag/gps read handlers were stalling everything
   # else scheduled on that rate group.
   # ----------------------------------------------------------------------

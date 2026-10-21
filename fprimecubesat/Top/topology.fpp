@@ -139,7 +139,7 @@ module fprimecubesat {
       rateGroup1.RateGroupMemberOut[3] -> ComCcsds.comQueue.run
       rateGroup1.RateGroupMemberOut[5] -> systemManager.run
       rateGroup1.RateGroupMemberOut[6] -> tempManager.run
-      # imu/gps run here, not on the 10Hz group - see note in instances.fpp
+      rateGroup1.RateGroupMemberOut[7] -> magnetometerManager.run
       rateGroup1.RateGroupMemberOut[8] -> navigationManager.run
       rateGroup1.RateGroupMemberOut[9] -> imuManager.run
 
@@ -154,8 +154,6 @@ module fprimecubesat {
       rateGroup3.RateGroupMemberOut[2] -> DataProducts.dpBufferManager.schedIn
       rateGroup3.RateGroupMemberOut[3] -> DataProducts.dpWriter.schedIn
       rateGroup3.RateGroupMemberOut[4] -> DataProducts.dpMgr.schedIn
-      # mag runs here, not on the 10Hz group - see note in instances.fpp
-      rateGroup3.RateGroupMemberOut[5] -> magnetometerManager.run
     }
 
     connections CdhCore_cmdSeq {

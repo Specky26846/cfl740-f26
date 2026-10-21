@@ -19,9 +19,9 @@ using namespace fprimecubesat;
 Fw::MallocAllocator mallocator;
 
 // rate group divisors: timer ticks at 10hz (100ms)
-//   rateGroup1: divider 10 -> 1hz  (system, radio, temp, nav, imu managers)
+//   rateGroup1: divider 10 -> 1hz  (system, radio, temp, nav, imu, mag managers)
 //   rateGroup2: divider 1  -> 10hz (cmdSeq)
-//   rateGroup3: divider 4  -> 2.5hz (health, buffers, data products, magnetometer)
+//   rateGroup3: divider 4  -> 2.5hz (health, buffers, data products)
 Svc::RateGroupDriver::DividerSet rateGroupDivisorsSet{{{10, 0}, {1, 0}, {4, 0}}};
 
 // Rate groups may supply a context token to each of the attached children whose purpose is set by the project. The
@@ -104,7 +104,7 @@ void configureTopology() {
     */
 
     // Configure manager I2C addresses
-    imuManager.configure(0x68);
+    imuManager.configure(0x69);
     magnetometerManager.configure(0x20);
     navigationManager.configure();
 }
