@@ -21,7 +21,7 @@ Fw::MallocAllocator mallocator;
 // rate group divisors: timer ticks at 10hz (100ms)
 //   rateGroup1: divider 10 -> 1hz  (system, radio, temp, nav, imu, mag managers)
 //   rateGroup2: divider 1  -> 10hz (cmdSeq)
-//   rateGroup3: divider 4  -> 2.5hz (health, buffers, data products)
+//   rateGroup3: divider 4  -> 2.5hz (health, buffers, data products, eddy pdu)
 Svc::RateGroupDriver::DividerSet rateGroupDivisorsSet{{{10, 0}, {1, 0}, {4, 0}}};
 
 // Rate groups may supply a context token to each of the attached children whose purpose is set by the project. The
@@ -93,6 +93,12 @@ void configureTopology() {
     bool i2cTempOk = tempI2cDriver.open("/dev/i2c-1");
     if (!i2cTempOk) {
         Fw::Logger::log("[ERROR] Failed to open I2C for temperature sensor\n");
+    }
+
+    // I2C driver for Eddy PDU (ADS7828s at 0x48 / 0x49)
+    bool i2cPduOk = pduI2cDriver.open("/dev/i2c-1");
+    if (!i2cPduOk) {
+        Fw::Logger::log("[ERROR] Failed to open I2C for Eddy PDU\n");
     }
 
     // SPI driver for Radio - Raspberry Pi 4 SPI bus 0, chip select 0

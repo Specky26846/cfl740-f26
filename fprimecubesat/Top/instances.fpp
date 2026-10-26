@@ -72,6 +72,12 @@ module fprimecubesat {
     stack size Default.STACK_SIZE \
     priority 90
 
+  # eddy pdu - runs on rateGroup3 (2.5Hz) since rateGroup1 has no free output ports
+  instance pduManager: Managers.PduManager base id 0x10026000 \
+    queue size 50 \
+    stack size Default.STACK_SIZE \
+    priority 90
+
   # ----------------------------------------------------------------------
   # Manager component instances (originally 10Hz rate group)
   #
@@ -119,5 +125,6 @@ module fprimecubesat {
   instance magI2cDriver: Drv.LinuxI2cDriver base id 0x10031000
   instance gpsI2cDriver: Drv.LinuxI2cDriver base id 0x10033000
   instance tempI2cDriver: Drv.LinuxI2cDriver base id 0x10034000
+  instance pduI2cDriver: Drv.LinuxI2cDriver base id 0x10035000
 
 }

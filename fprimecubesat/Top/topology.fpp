@@ -44,12 +44,14 @@ module fprimecubesat {
     instance navigationManager
     instance magnetometerManager
     instance tempManager
+    instance pduManager
 
     # Bus driver instances
     instance imuI2cDriver
     instance magI2cDriver
     instance gpsI2cDriver
     instance tempI2cDriver
+    instance pduI2cDriver
 
   # ----------------------------------------------------------------------
   # Pattern graph specifiers
@@ -154,6 +156,7 @@ module fprimecubesat {
       rateGroup3.RateGroupMemberOut[2] -> DataProducts.dpBufferManager.schedIn
       rateGroup3.RateGroupMemberOut[3] -> DataProducts.dpWriter.schedIn
       rateGroup3.RateGroupMemberOut[4] -> DataProducts.dpMgr.schedIn
+      rateGroup3.RateGroupMemberOut[5] -> pduManager.run
     }
 
     connections CdhCore_cmdSeq {
@@ -178,6 +181,10 @@ module fprimecubesat {
       # TMP102 I2C bus connections
       tempManager.busWriteRead -> tempI2cDriver.writeRead
       tempManager.busWrite -> tempI2cDriver.write
+
+      # Eddy PDU (2x ADS7828) I2C bus connections
+      pduManager.busWriteRead -> pduI2cDriver.writeRead
+      pduManager.busWrite -> pduI2cDriver.write
 
       # Component health reporting to SystemManager
       imuManager.healthOut -> systemManager.sensorHealth

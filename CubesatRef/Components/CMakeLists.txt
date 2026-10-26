@@ -9,3 +9,4 @@ add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/NavigationManager/")
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/MagnetometerManager/")
 
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/TempManager/")
+add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/PduManager/")
