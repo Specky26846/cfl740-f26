@@ -7,6 +7,7 @@ add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/SystemManager/")
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/IMUManager/")
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/NavigationManager/")
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/MagnetometerManager/")
-
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/TempManager/")
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/PduManager/")
+add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/PacketBuilder/")
+add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/RadioManager/")
