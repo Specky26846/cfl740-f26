@@ -1,11 +1,11 @@
-# CubesatRef — F´ reference system
+# CFL 740 Fall 2026 F´ project
 
-(README rewritten by Claude, reviewed by Yukti Vijay and Laura Fernandes)
+This GitHub repository stores the flight software for CFL 740's F26 stratosat mission. 
+
+F´ (F Prime) is a component-driven framework that enables rapid development and deployment of spaceflight and other embedded software applications.
+**Please Visit the F´ Website:** https://fprime.jpl.nasa.gov.
 
 This repo is an F´ (F Prime) reference deployment for a cubesat device-manager stack: temperature, IMU, GPS, and magnetometer sensors, a LoRa radio, and a system-health manager, all running on **Raspberry Pi (Linux ARM)** over `LinuxI2cDriver` / `LinuxSpiDriver` / `LinuxGpioDriver`.
-
-**F´ (F Prime) is a component-driven framework for spaceflight and other embedded software applications.**
-Visit the F´ website: https://fprime.jpl.nasa.gov.
 
 ---
 
