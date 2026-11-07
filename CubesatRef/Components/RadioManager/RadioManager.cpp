@@ -6,7 +6,7 @@
 
 #include "CubesatRef/Components/RadioManager/RadioManager.hpp"
 
-namespace CubesatRef {
+namespace Managers {
 
 // ----------------------------------------------------------------------
 // Component construction and destruction

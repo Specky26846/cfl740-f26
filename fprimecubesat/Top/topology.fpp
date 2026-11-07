@@ -45,6 +45,7 @@ module fprimecubesat {
     instance magnetometerManager
     instance tempManager
     instance pduManager
+    instance radioManager
 
     # Bus driver instances
     instance imuI2cDriver
@@ -52,6 +53,7 @@ module fprimecubesat {
     instance gpsI2cDriver
     instance tempI2cDriver
     instance pduI2cDriver
+    instance radioSpi
 
   # ----------------------------------------------------------------------
   # Pattern graph specifiers
@@ -195,7 +197,8 @@ module fprimecubesat {
     }
 
     connections fprimecubesat {
-
+      # RadioManager -> SPI driver
+      radioManager.spiWriteRead -> radioSpi.SpiWriteRead
     }
 
   }

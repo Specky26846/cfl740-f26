@@ -1,4 +1,4 @@
-module CubesatRef {
+module Managers {
     @ Manages radio communication via SPI
     active component RadioManager {
 

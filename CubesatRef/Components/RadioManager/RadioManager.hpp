@@ -9,7 +9,7 @@
 
 #include "CubesatRef/Components/RadioManager/RadioManagerComponentAc.hpp"
 
-namespace CubesatRef {
+namespace Managers {
 
 class RadioManager final : public RadioManagerComponentBase {
   public:
