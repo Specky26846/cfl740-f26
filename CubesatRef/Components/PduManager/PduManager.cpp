@@ -83,9 +83,11 @@ void PduManager::Managers_PduManagerStateMachine_action_doInit(
 
     Drv::I2cStatus status = this->busWrite_out(0, ADC0_ADDR, cmdBuf);
     if (status == Drv::I2cStatus::I2C_OK) {
+        // second adc is optional - it's unpowered when only the 3v3 rail is connected
         cmdBuf.setSize(sizeof(cmd));
-        status = this->busWrite_out(0, ADC1_ADDR, cmdBuf);
+        (void) this->busWrite_out(0, ADC1_ADDR, cmdBuf);
     }
+
 
     if (status == Drv::I2cStatus::I2C_OK) {
         this->log_ACTIVITY_HI_StateChange(PduManager_SensorState::RUNNING);
