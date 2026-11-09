@@ -168,6 +168,10 @@ class RadioManager final : public RadioManagerComponentBase {
     // ----------------------------------------------------------------------
     // Handler implementations for user-defined internal interfaces
     // ----------------------------------------------------------------------
+    
+    void rapIn_handler(FwIndexType portNum, Fw::ComBuffer& data, U32 context) override;
+
+    bool m_txFromRap = false;  // current tx came from rapIn - nothing to hand back to the com stack
 
     //! Handler implementation for transmitFrame
     //!

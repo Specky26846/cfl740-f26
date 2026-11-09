@@ -166,12 +166,13 @@ bool RadioManager ::writeFifo(const U8* data, FwSizeType len) {
     return this->spiTransfer(local_TX, local_RX, len+1);
 }
 
+// cleanup after a transmission, report status, and return to RX mode
 void RadioManager ::finishTx(bool success) {
     if (!this->m_txInProgress) return;
 
     this->m_txInProgress = false; 
 
-    if (this->isConnected_dataReturnOut_OutputPort(0)) {
+    if (!this->m_txFromRap && this->isConnected_dataReturnOut_OutputPort(0)) {
         this->dataReturnOut_out(0, m_txBuffer, m_txContext);
     }
 
@@ -198,10 +199,12 @@ void RadioManager ::finishTx(bool success) {
         }
     }
     
-    if (this->isConnected_comStatusOut_OutputPort(0)) {
+    if (!this->m_txFromRap && this->isConnected_comStatusOut_OutputPort(0)) {
         Fw::Success  status = radioOk ? Fw::Success::SUCCESS : Fw::Success::FAILURE;
         this->comStatusOut_out(0, status);
     }
+
+    this->m_txFromRap = false;  // ready for whatever sends next
 }
 
 void RadioManager ::checkTxDone() {
@@ -324,6 +327,7 @@ void RadioManager ::pollRx() {
     }
 }
 
+// internal interface handler for transmitFrame - called by the RAP component to send a LoRa packet
 void RadioManager ::dataIn_handler(FwIndexType portNum, Fw::Buffer& data, const ComCfg::FrameContext& context) {
     this->transmitFrame_internalInterfaceInvoke(data, context);
 }
@@ -397,6 +401,25 @@ void RadioManager ::RESET_RADIO_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
 // Handler implementations for user-defined internal interfaces
 // ----------------------------------------------------------------------
 
+// Second step in sending LoRa packet:
+// on each run tick, check if TX done bit is set or if timeout reached, and call finishTx() accordingly
+void RadioManager ::rapIn_handler(FwIndexType portNum, Fw::ComBuffer& data, U32 context) {
+    // radio still sending the last packet - drop this beacon, the next one is a second away
+    if (this->m_txInProgress) {
+        return;
+    }
+
+    // wrap the RAP bytes without copying - only valid until this handler returns, which is
+    // fine because transmitFrame loads them into the radio FIFO before returning
+    Fw::Buffer rapBuffer(data.getBuffAddr(), data.getSize());
+    this->m_txFromRap = true;
+
+    // already on RadioManager's thread, so can call the internal interface directly
+    this->transmitFrame_internalInterfaceHandler(rapBuffer, ComCfg::FrameContext());
+}
+
+// First step in sending LoRa packet:
+// loads bytes into radio FIFO, switches chip to TX mode, and sets m_txInProgress to true.
 void RadioManager ::transmitFrame_internalInterfaceHandler(const Fw::Buffer& data,
                                                            const ComCfg::FrameContext& context) {
     

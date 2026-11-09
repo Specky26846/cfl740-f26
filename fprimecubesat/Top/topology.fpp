@@ -200,6 +200,13 @@ module fprimecubesat {
 
     connections fprimecubesat {
       packetBuilder.rapOut -> radioManager.rapIn
+      
+      imuManager.dataOut -> packetBuilder.imuIn
+      magnetometerManager.dataOut -> packetBuilder.magIn
+      tempManager.dataOut -> packetBuilder.tempIn
+      pduManager.dataOut -> packetBuilder.pduIn
+      navigationManager.dataOut -> packetBuilder.gpsIn
+
       # RadioManager -> SPI driver
       radioManager.spiWriteRead -> radioSpi.SpiWriteRead
     }

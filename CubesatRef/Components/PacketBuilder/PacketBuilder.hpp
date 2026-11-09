@@ -37,6 +37,12 @@ class PacketBuilder final : public PacketBuilderComponentBase {
     void pduIn_handler(FwIndexType portNum, const Types::PowerData& data) override;
     void gpsIn_handler(FwIndexType portNum, const Types::GpsData& data) override;
 
+    // serialize the beacon fields in the same order as BEACON_DEFINITION in the encode.py
+    void serializeBeacon(Fw::ComBuffer& beacon);
+
+    // Rpi soc temperature in C, 0 if it can't be read
+    F64 readCpuTemp();
+
     // latest readings - zero until each manager reports in
     Types::ImuData m_imu;
     Types::GeometricVector3 m_mag;
