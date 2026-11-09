@@ -63,6 +63,13 @@ void IMUManager::Managers_IMUManagerStateMachine_action_doRead(
         this->tlmWrite_GyroY(gy);
         this->tlmWrite_GyroZ(gz);
         this->tlmWrite_ImuTemp(temp);
+
+        // if connected to output port, send the latest reading to PacketBuilder
+        if (this->isConnected_dataOut_OutputPort(0)) {
+            this->dataOut_out(0, Types::ImuData(Types::GeometricVector3(ax, ay, az),
+                                                Types::GeometricVector3(gx, gy, gz), temp));
+        }
+
     } else {
         this->log_ACTIVITY_HI_StateChange(IMUManager_SensorState::FAULT);
         if (this->isConnected_healthOut_OutputPort(0)) {
@@ -111,6 +118,13 @@ void IMUManager::Managers_IMUManagerStateMachine_action_doSimRead(
     this->tlmWrite_GyroY(gy);
     this->tlmWrite_GyroZ(gz);
     this->tlmWrite_ImuTemp(temp);
+
+    // if connected to output port, send the latest reading to PacketBuilder
+    if (this->isConnected_dataOut_OutputPort(0)) {
+        this->dataOut_out(0, Types::ImuData(Types::GeometricVector3(ax, ay, az),
+                                            Types::GeometricVector3(gx, gy, gz), temp));
+    }
+
 }
 
 // command handlers

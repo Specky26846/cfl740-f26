@@ -29,14 +29,24 @@ class PacketBuilder final : public PacketBuilderComponentBase {
     // Handler implementations for commands
     // ----------------------------------------------------------------------
 
-    //! Handler implementation for command TODO
-    //!
-    //! TODO
-    void TODO_cmdHandler(FwOpcodeType opCode,  //!< The opcode
-                         U32 cmdSeq            //!< The command sequence number
-                         ) override;
-};
+    void run_handler(FwIndexType portNum, U32 context) override;
 
+    void imuIn_handler(FwIndexType portNum, const Types::ImuData& data) override;
+    void magIn_handler(FwIndexType portNum, const Types::GeometricVector3& data) override;
+    void tempIn_handler(FwIndexType portNum, F32 temperature) override;
+    void pduIn_handler(FwIndexType portNum, const Types::PowerData& data) override;
+    void gpsIn_handler(FwIndexType portNum, const Types::GpsData& data) override;
+
+    // latest readings - zero until each manager reports in
+    Types::ImuData m_imu;
+    Types::GeometricVector3 m_mag;
+    F32 m_temp = 0.0f;
+    Types::PowerData m_power;
+    Types::GpsData m_gps;
+
+    U32 m_beaconCount = 0;
+
+  };
 }  // namespace CubesatRef
 
 #endif

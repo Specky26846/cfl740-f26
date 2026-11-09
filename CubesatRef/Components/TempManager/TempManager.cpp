@@ -47,6 +47,12 @@ void TempManager::Managers_TempManagerStateMachine_action_doRead(
 
     if (status == Drv::I2cStatus::I2C_OK) {
         this->tlmWrite_Temperature(temperature);
+
+        // if connected to output port, send the latest reading to PacketBuilder
+        if (this->isConnected_dataOut_OutputPort(0)) {
+            this->dataOut_out(0, temperature);
+        }
+
         if (++m_readCount % READ_LOG_INTERVAL == 0) {
             this->log_ACTIVITY_LO_TempReading(temperature);
         }
@@ -68,6 +74,12 @@ void TempManager::Managers_TempManagerStateMachine_action_doFaultRecovery(
     Drv::I2cStatus status = this->readRawTemp(temperature);
     if (status == Drv::I2cStatus::I2C_OK) {
         this->tlmWrite_Temperature(temperature);
+
+        // if connected to output port, send the latest reading to PacketBuilder
+        if (this->isConnected_dataOut_OutputPort(0)) {
+            this->dataOut_out(0, temperature);
+        }
+
         this->log_ACTIVITY_HI_StateChange(TempManager_SensorState::RUNNING);
         if (this->isConnected_healthOut_OutputPort(0)) {
             this->healthOut_out(0, true);
@@ -90,6 +102,11 @@ void TempManager::Managers_TempManagerStateMachine_action_doSimRead(
     m_simTick++;
 
     this->tlmWrite_Temperature(temperature);
+
+    // if connected to output port, send the latest reading to PacketBuilder
+    if (this->isConnected_dataOut_OutputPort(0)) {
+        this->dataOut_out(0, temperature);
+    }
 }
 
 // command handlers
@@ -99,6 +116,12 @@ void TempManager::READ_TEMP_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
     Drv::I2cStatus status = this->readRawTemp(temperature);
     if (status == Drv::I2cStatus::I2C_OK) {
         this->tlmWrite_Temperature(temperature);
+
+        // if connected to output port, send the latest reading to PacketBuilder
+        if (this->isConnected_dataOut_OutputPort(0)) {
+            this->dataOut_out(0, temperature);
+        }
+
     }
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
 }

@@ -253,6 +253,14 @@ void PduManager::writeTelemetry(const PduReadings& readings) {
     this->tlmWrite_VBattCurrent(readings.vbattI);
     this->tlmWrite_Reg3v3Temp(readings.temp3v3Reg);
     this->tlmWrite_Reg5v0Temp(readings.temp5v0Reg);
+
+    // if connected to output port, send the latest reading to PacketBuilder
+    if (this->isConnected_dataOut_OutputPort(0)) {
+        this->dataOut_out(0, Types::PowerData(readings.vbattRawV, readings.vbattRawI, readings.v3v3,
+                                                readings.i3v3, readings.v5v0, readings.i5v0, readings.vbattV,
+                                                readings.vbattI, readings.temp3v3Reg, readings.temp5v0Reg));
+    }
+
 }
 
 void PduManager::reportHealth(bool healthy) {

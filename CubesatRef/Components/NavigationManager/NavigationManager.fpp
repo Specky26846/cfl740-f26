@@ -52,6 +52,9 @@ module Managers {
         # tells system manager if we're healthy or not
         output port healthOut: Managers.ComponentHealth
 
+        # latest reading to the packet builder
+        output port dataOut: Managers.GpsSample
+
         # standard fprime ports
         time get port timeCaller
         command reg port cmdRegOut

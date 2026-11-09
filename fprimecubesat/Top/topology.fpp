@@ -46,6 +46,7 @@ module fprimecubesat {
     instance tempManager
     instance pduManager
     instance radioManager
+    instance packetBuilder
 
     # Bus driver instances
     instance imuI2cDriver
@@ -146,6 +147,7 @@ module fprimecubesat {
       rateGroup1.RateGroupMemberOut[7] -> magnetometerManager.run
       rateGroup1.RateGroupMemberOut[8] -> navigationManager.run
       rateGroup1.RateGroupMemberOut[9] -> imuManager.run
+      rateGroup1.RateGroupMemberOut[10] -> packetBuilder.run
 
       # Rate group 2 (10Hz - fast periodic)
       rateGroupDriver.CycleOut[Ports_RateGroups.rateGroup2] -> rateGroup2.CycleIn
@@ -197,6 +199,7 @@ module fprimecubesat {
     }
 
     connections fprimecubesat {
+      packetBuilder.rapOut -> radioManager.rapIn
       # RadioManager -> SPI driver
       radioManager.spiWriteRead -> radioSpi.SpiWriteRead
     }

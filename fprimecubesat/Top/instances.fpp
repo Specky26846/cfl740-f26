@@ -83,6 +83,11 @@ module fprimecubesat {
     stack size Default.STACK_SIZE \
     priority 39
 
+  instance packetBuilder: CubesatRef.PacketBuilder base id 0x10028000 \
+    queue size Default.QUEUE_SIZE \
+    stack size Default.STACK_SIZE \
+    priority 40
+
   # ----------------------------------------------------------------------
   # Manager component instances (originally 10Hz rate group)
   #

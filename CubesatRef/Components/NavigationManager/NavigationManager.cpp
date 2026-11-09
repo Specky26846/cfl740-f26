@@ -152,6 +152,12 @@ void NavigationManager::reportGpsTelemetry(F64 lat, F64 lon, F32 alt, F32 speed,
     this->tlmWrite_GroundSpeed(speed);
     this->tlmWrite_NumSatellites(numSats);
 
+    // if connected to output port, send the latest reading to PacketBuilder
+    if (this->isConnected_dataOut_OutputPort(0)) {
+        this->dataOut_out(0, Types::GpsData(lat, lon, alt, speed, numSats));
+    }
+
+
     // throttle the event log - gga fires every second and event bandwidth is limited
     if (++m_readCount % READ_LOG_INTERVAL == 0) {
         this->log_ACTIVITY_LO_GpsReading(lat, lon, alt, numSats);

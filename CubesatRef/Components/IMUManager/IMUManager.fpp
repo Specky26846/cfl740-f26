@@ -44,6 +44,10 @@ module Managers {
         # tells system manager if we're healthy or not
         output port healthOut: Managers.ComponentHealth
 
+        # latest reading to the packet builder
+        output port dataOut: Managers.ImuSample
+
+
         # i2c ports for icm-20649
         output port busWriteRead: Drv.I2cWriteRead
         output port busWrite: Drv.I2c

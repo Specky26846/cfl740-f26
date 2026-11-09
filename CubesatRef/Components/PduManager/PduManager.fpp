@@ -44,6 +44,9 @@ module Managers {
         # tells system manager if we're healthy or not
         output port healthOut: Managers.ComponentHealth
 
+        # latest reading to the packet builder
+        output port dataOut: Managers.PduSample
+
         enum SensorState { INIT, RUNNING, FAULT, SIM }
 
         # reports state machine transitions

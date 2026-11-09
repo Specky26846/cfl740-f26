@@ -85,6 +85,12 @@ void MagnetometerManager::Managers_MagnetometerManagerStateMachine_action_doFaul
         this->tlmWrite_MagX(mx);
         this->tlmWrite_MagY(my);
         this->tlmWrite_MagZ(mz);
+
+        // if connected to output port, send the latest reading to PacketBuilder
+        if (this->isConnected_dataOut_OutputPort(0)) { 
+            this->dataOut_out(0, Types::GeometricVector3(mx, my, mz));
+        }
+
         this->log_ACTIVITY_HI_StateChange(MagnetometerManager_SensorState::RUNNING);
         if (this->isConnected_healthOut_OutputPort(0)) {
             this->healthOut_out(0, true);
@@ -105,6 +111,11 @@ void MagnetometerManager::Managers_MagnetometerManagerStateMachine_action_doSimR
     this->tlmWrite_MagX(mx);
     this->tlmWrite_MagY(my);
     this->tlmWrite_MagZ(mz);
+
+    // if connected to output port, send the latest reading to PacketBuilder
+    if (this->isConnected_dataOut_OutputPort(0)) { 
+        this->dataOut_out(0, Types::GeometricVector3(mx, my, mz));
+    }
 }
 
 // command handlers

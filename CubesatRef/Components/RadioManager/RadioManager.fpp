@@ -21,6 +21,9 @@ module Managers {
         @ Port receiving calls from the rate group
         async input port run: Svc.Sched drop
 
+        @ Raw RAP packet to transmit as-is
+        async input port rapIn: Fw.Com
+
         @ Moves frame from dataIn onto our thread
         internal port transmitFrame(data: Fw.Buffer, context: ComCfg.FrameContext)
 

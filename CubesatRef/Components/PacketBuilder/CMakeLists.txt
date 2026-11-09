@@ -19,6 +19,7 @@ register_fprime_library(
         "${CMAKE_CURRENT_LIST_DIR}/PacketBuilder.fpp"
     SOURCES
         "${CMAKE_CURRENT_LIST_DIR}/PacketBuilder.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/RapEncoder.cpp"
 #   DEPENDS
 #       MyPackage_MyOtherModule
 )
