@@ -81,7 +81,7 @@ module fprimecubesat {
   instance radioManager: Managers.RadioManager base id 0x10027000 \
     queue size Default.QUEUE_SIZE \
     stack size Default.STACK_SIZE \
-    priority 39
+    priority 60
 
   instance packetBuilder: CubesatRef.PacketBuilder base id 0x10028000 \
     queue size Default.QUEUE_SIZE \
@@ -128,9 +128,9 @@ module fprimecubesat {
   instance systemResources: Svc.SystemResources base id 0x10012000
 
   instance timer: Svc.LinuxTimer base id 0x10013000
-  instance comDriver: Drv.TcpServer base id 0x10014000
   
   instance radioSpi: Drv.LinuxSpiDriver base id 0x10016000
+  instance radioResetGpio: Drv.LinuxGpioDriver base id 0x10019000
 
   # Bus driver instances
   instance imuI2cDriver: Drv.LinuxI2cDriver base id 0x10030000

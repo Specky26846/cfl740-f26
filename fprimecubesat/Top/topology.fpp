@@ -16,7 +16,7 @@ module fprimecubesat {
   # Subtopology imports
   # ----------------------------------------------------------------------
     import CdhCore.Subtopology
-    import ComCcsds.Subtopology
+    import ComCcsds.FramingSubtopology
     import DataProducts.Subtopology
     import FileHandling.Subtopology
 
@@ -35,8 +35,10 @@ module fprimecubesat {
     instance rateGroupDriver
     instance systemResources
     instance timer
-    instance comDriver
+
     instance cmdSeq
+
+    instance radioResetGpio
 
     # Manager instances
     instance systemManager
@@ -112,20 +114,6 @@ module fprimecubesat {
       FileHandling.fileUplink.bufferSendOut -> ComCcsds.fprimeRouter.fileBufferReturnIn
     }
 
-    connections Communications {
-      # ComDriver buffer allocations
-      comDriver.allocate      -> ComCcsds.commsBufferManager.bufferGetCallee
-      comDriver.deallocate    -> ComCcsds.commsBufferManager.bufferSendIn
-
-      # ComDriver <-> ComStub (Uplink)
-      comDriver.$recv                     -> ComCcsds.comStub.drvReceiveIn
-      ComCcsds.comStub.drvReceiveReturnOut -> comDriver.recvReturnIn
-
-      # ComStub <-> ComDriver (Downlink)
-      ComCcsds.comStub.drvSendOut      -> comDriver.$send
-      comDriver.ready         -> ComCcsds.comStub.drvConnected
-    }
-
     connections FileHandling_DataProducts {
       # Data Products to File Downlink
       DataProducts.dpCat.fileOut -> FileHandling.fileDownlink.SendFile
@@ -148,6 +136,7 @@ module fprimecubesat {
       rateGroup1.RateGroupMemberOut[8] -> navigationManager.run
       rateGroup1.RateGroupMemberOut[9] -> imuManager.run
       rateGroup1.RateGroupMemberOut[10] -> packetBuilder.run
+      rateGroup1.RateGroupMemberOut[11] -> radioManager.run
 
       # Rate group 2 (10Hz - fast periodic)
       rateGroupDriver.CycleOut[Ports_RateGroups.rateGroup2] -> rateGroup2.CycleIn
@@ -207,8 +196,25 @@ module fprimecubesat {
       pduManager.dataOut -> packetBuilder.pduIn
       navigationManager.dataOut -> packetBuilder.gpsIn
 
+      # RadioManager -> reset GPIO (RST pin, GPIO25)
+      radioManager.resetPin -> radioResetGpio.gpioWrite
+
       # RadioManager -> SPI driver
       radioManager.spiWriteRead -> radioSpi.SpiWriteRead
+
+      # RadioManager RX buffers
+      radioManager.allocate   -> ComCcsds.commsBufferManager.bufferGetCallee
+      radioManager.deallocate -> ComCcsds.commsBufferManager.bufferSendIn
+
+      # Downlink: framer -> radio
+      ComCcsds.FramingSubtopology.dataOut  -> radioManager.dataIn
+      radioManager.dataReturnOut           -> ComCcsds.FramingSubtopology.dataReturnIn
+      radioManager.comStatusOut            -> ComCcsds.FramingSubtopology.comStatusIn
+
+      # Uplink: radio -> frame accumulator
+      radioManager.dataOut                 -> ComCcsds.FramingSubtopology.dataIn
+      ComCcsds.FramingSubtopology.dataReturnOut -> radioManager.dataReturnIn
+    
     }
 
   }

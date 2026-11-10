@@ -1,4 +1,13 @@
 module Managers {
+    @ Default parameters and link loss fallbacks
+    module RadioDefaults {
+        constant FREQUENCY_HZ = 437000000
+        constant TX_POWER_DBM = 14
+        constant SPREADING_FACTOR = 7
+        constant BANDWIDTH = 7
+        constant CODING_RATE = 1
+    }
+    
     @ Manages radio communication via SPI
     active component RadioManager {
 
@@ -27,6 +36,12 @@ module Managers {
         @ Moves frame from dataIn onto our thread
         internal port transmitFrame(data: Fw.Buffer, context: ComCfg.FrameContext)
 
+        @ Health check: ping in from Svc.Health
+        async input port pingIn: Svc.Ping
+
+        @ Health check: ping response
+        output port pingOut: Svc.Ping
+
         # ------ Hardware/Memory -------
 
         @ SPI communication to the radio
@@ -37,6 +52,9 @@ module Managers {
 
         @ Return buffer to buff manager
         output port deallocate: Fw.BufferSend
+
+        @ Drives radio RST pin (high = run, pulse = reset)
+        output port resetPin: Drv.GpioWrite
 
         # ------ Commands -------
 
@@ -52,22 +70,31 @@ module Managers {
         # ------ Parameters -------
 
         @ Carrier freq in Hz
-        param FREQUENCY_HZ: U32 default 437000000
+        param FREQUENCY_HZ: U32 default RadioDefaults.FREQUENCY_HZ
 
         @ TX power dBm
-        param TX_POWER_DBM: I8 default 14
+        param TX_POWER_DBM: I8 default RadioDefaults.TX_POWER_DBM
 
         @ LoRa spreading factor
-        param SPREADING_FACTOR: U8 default 9
+        param SPREADING_FACTOR: U8 default RadioDefaults.SPREADING_FACTOR
 
         @ LoRa bandwidth
-        param BANDWIDTH: U8 default 7
+        param BANDWIDTH: U8 default RadioDefaults.BANDWIDTH
 
         @ LoRa coding rate
-        param CODING_RATE: U8 default 1
+        param CODING_RATE: U8 default RadioDefaults.CODING_RATE
 
         @ Ticks to wait for TX done before failure
         param TX_TIMEOUT_TICKS: U32 default 10
+
+        @ Minimum ticks between the starts of consecutive transmissions (one frame per period)
+        param TX_PERIOD_TICKS: U32 default 5
+
+        @ Ticks to wait in ERROR before automatically re-initializing the radio
+        param ERROR_RETRY_TICKS: U32 default 10
+
+        @ Ticks with no uplink before reverting the radio to its default settings (0 = disabled)
+        param LINK_LOSS_TICKS: U32 default 600
 
 
         # ------ Events -------
@@ -85,7 +112,8 @@ module Managers {
         @ Radio failed init
         event RadioInitFailed(readVersion: U8, expectedVersion: U8) \
             severity warning high \
-            format "Radio init failed: read version 0x{x}, expected 0x{x}"
+            format "Radio init failed: read version 0x{x}, expected 0x{x}" \
+            throttle 10
 
         @ Radio config written to chip
         event ConfigApplied(freqHz: U32, powerDbm: I8, sf: U8, bw: U8, cr: U8) \
@@ -114,6 +142,21 @@ module Managers {
             format "Could not allocate {} byte RX buffer" \
             throttle 10
 
+        @ A packet was received (debug view of its contents)
+        event RxPacket(numBytes: U32, rssi: I16, snr: I8, hexData: string size 128) \
+            severity diagnostic \
+            format "RX {} bytes, RSSI {} dBm, SNR {} dB: {}"
+
+        @ Radio is retrying initialization after an error
+        event RadioRecoveryAttempt(attempt: U32) \
+            severity warning low \
+            format "Radio in ERROR, re-initializing (attempt {})" \
+            throttle 10
+
+        @ No uplink for too long, radio reverted to default settings
+        event LinkLossFallback(ticksWithoutUplink: U32) \
+            severity warning high \
+            format "No uplink for {} ticks, reverting radio to default settings"
 
         # ------ Telemetry -------
 
@@ -137,6 +180,12 @@ module Managers {
 
         @ SNR of last received packet
         telemetry LastSnr: I8
+
+        @ Packets received with a bad CRC
+        telemetry RxCrcErrors: U32
+
+        @ Packets received but dropped (bad length, not addressed to us, no buffer, read failure)
+        telemetry RxDropped: U32
 
 
         ###############################################################################
