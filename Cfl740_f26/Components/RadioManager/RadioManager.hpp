@@ -90,6 +90,26 @@ class RadioManager final : public RadioManagerComponentBase {
     static constexpr U8 REG_PKT_RSSI_VALUE = 0x1A;
     static constexpr I16 RSSI_OFFSET = -164;
 
+    // RadioHead header (Adafruit rfm9x compatible): [to, from, id, flags]
+    static constexpr U8 RH_HEADER_LEN     = 4;
+    static constexpr U8 RH_ADDR_FLIGHT    = 0x01;
+    static constexpr U8 RH_ADDR_GROUND    = 0x02;
+    static constexpr U8 RH_ADDR_BROADCAST = 0xFF;
+    static constexpr FwSizeType RX_DEBUG_MAX_BYTES = 40;  // 40 bytes x 3 chars = 120 < 128
+
+    bool m_statusPending = false;   // a comStatus is waiting for the RX window to end
+    U32 m_ticksSinceTx = 0;   // ticks since the last transmission started
+    U32 m_rxCrcErrors = 0;    // packets with a bad CRC
+    U32 m_rxDropped = 0;      // packets dropped for any other reason
+
+    U32 m_errorTicks = 0;        // ticks spent in ERROR
+    U32 m_recoveryAttempts = 0;  // total recovery attemps
+
+    bool m_configPending = false;   // a radio setting changed; apply it in RX
+
+    U32  m_ticksSinceUplink = 0;    // ticks since the last uplink packet was accepted
+    bool m_fallbackActive = false;  // using default radio settings after link loss
+
     bool spiTransfer(U8* tx_array, U8* rx_array, FwSizeType length);
 
     bool readRegister(U8 addr, U8& value);
@@ -112,6 +132,12 @@ class RadioManager final : public RadioManagerComponentBase {
 
     void pollRx();
 
+    void hardwareReset();
+
+    void parameterUpdated(FwPrmIdType id) override;
+
+    void dropRx();
+
     // ----------------------------------------------------------------------
     // Handler implementations for typed input ports
     // ----------------------------------------------------------------------
@@ -129,6 +155,13 @@ class RadioManager final : public RadioManagerComponentBase {
     void dataReturnIn_handler(FwIndexType portNum,  //!< The port number
                               Fw::Buffer& data,
                               const ComCfg::FrameContext& context) override;
+
+    //! Handler implementation for pingIn
+    //!
+    //! Health check: ping in from Svc.Health
+    void pingIn_handler(FwIndexType portNum,  //!< The port number
+                        U32 key               //!< Value to return to pinger
+                        ) override;
 
     //! Handler implementation for run
     //!

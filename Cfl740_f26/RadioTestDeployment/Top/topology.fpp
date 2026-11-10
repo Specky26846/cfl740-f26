@@ -16,7 +16,8 @@ module Cfl740_f26 {
   # Subtopology imports
   # ----------------------------------------------------------------------
     import CdhCore.Subtopology
-    import ComCcsds.Subtopology
+    # import ComCcsds.Subtopology
+    import ComCcsds.FramingSubtopology
     import DataProducts.Subtopology
     import FileHandling.Subtopology
     
@@ -30,10 +31,11 @@ module Cfl740_f26 {
     instance rateGroupDriver
     instance systemResources
     instance timer
-    instance comDriver
+    # instance comDriver
     instance cmdSeq
     instance radioManager
     instance radioSpi
+    instance radioResetGpio
 
   # ----------------------------------------------------------------------
   # Pattern graph specifiers
@@ -78,19 +80,19 @@ module Cfl740_f26 {
       FileHandling.fileUplink.bufferSendOut -> ComCcsds.fprimeRouter.fileBufferReturnIn
     }
 
-    connections Communications {
-      # ComDriver buffer allocations
-      comDriver.allocate      -> ComCcsds.commsBufferManager.bufferGetCallee
-      comDriver.deallocate    -> ComCcsds.commsBufferManager.bufferSendIn
+    # connections Communications {
+    #   # ComDriver buffer allocations
+    #   comDriver.allocate      -> ComCcsds.commsBufferManager.bufferGetCallee
+    #   comDriver.deallocate    -> ComCcsds.commsBufferManager.bufferSendIn
       
-      # ComDriver <-> ComStub (Uplink)
-      comDriver.$recv                     -> ComCcsds.comStub.drvReceiveIn
-      ComCcsds.comStub.drvReceiveReturnOut -> comDriver.recvReturnIn
+    #   # ComDriver <-> ComStub (Uplink)
+    #   comDriver.$recv                     -> ComCcsds.comStub.drvReceiveIn
+    #   ComCcsds.comStub.drvReceiveReturnOut -> comDriver.recvReturnIn
       
-      # ComStub <-> ComDriver (Downlink)
-      ComCcsds.comStub.drvSendOut      -> comDriver.$send
-      comDriver.ready         -> ComCcsds.comStub.drvConnected
-    }
+    #   # ComStub <-> ComDriver (Downlink)
+    #   ComCcsds.comStub.drvSendOut      -> comDriver.$send
+    #   comDriver.ready         -> ComCcsds.comStub.drvConnected
+    # }
 
     connections FileHandling_DataProducts {
       # Data Products to File Downlink
@@ -104,12 +106,13 @@ module Cfl740_f26 {
 
       # 1Hz rate group
       rateGroupDriver.CycleOut[Ports_RateGroups.rateGroup_1Hz] -> rateGroup_1Hz.CycleIn
-      rateGroup_1Hz.RateGroupMemberOut[0] -> CdhCore.tlmSend.Run
+      # rateGroup_1Hz.RateGroupMemberOut[0] -> CdhCore.tlmSend.Run
       rateGroup_1Hz.RateGroupMemberOut[1] -> FileHandling.fileDownlink.Run
-      rateGroup_1Hz.RateGroupMemberOut[2] -> systemResources.run
+      # rateGroup_1Hz.RateGroupMemberOut[2] -> systemResources.run
       rateGroup_1Hz.RateGroupMemberOut[3] -> ComCcsds.comQueue.run
-      rateGroup_1Hz.RateGroupMemberOut[4] -> ComCcsds.aggregator.timeout
+      # rateGroup_1Hz.RateGroupMemberOut[4] -> ComCcsds.aggregator.timeout
       rateGroup_1Hz.RateGroupMemberOut[5] -> CdhCore.cmdDisp.run
+      rateGroup_1Hz.RateGroupMemberOut[6] -> radioManager.run
 
       # 0.5Hz rate group
       rateGroupDriver.CycleOut[Ports_RateGroups.rateGroup_0_5Hz] -> rateGroup_0_5Hz.CycleIn
@@ -122,6 +125,9 @@ module Cfl740_f26 {
       rateGroup_0_25Hz.RateGroupMemberOut[2] -> DataProducts.dpBufferManager.schedIn
       rateGroup_0_25Hz.RateGroupMemberOut[3] -> DataProducts.dpWriter.schedIn
       rateGroup_0_25Hz.RateGroupMemberOut[4] -> DataProducts.dpMgr.schedIn
+      rateGroup_0_25Hz.RateGroupMemberOut[5] -> CdhCore.tlmSend.Run
+      rateGroup_0_25Hz.RateGroupMemberOut[6] -> ComCcsds.aggregator.timeout
+      # rateGroup_0_25Hz.RateGroupMemberOut[7] -> systemResources.run
     }
 
     connections CdhCore_cmdSeq {
@@ -131,8 +137,24 @@ module Cfl740_f26 {
     }
 
     connections RadioTestDeployment {
+      # RadioManager -> reset GPIO (RST pin, GPIO25)
+      radioManager.resetPin -> radioResetGpio.gpioWrite
+
       # RadioManager -> SPI driver
       radioManager.spiWriteRead -> radioSpi.SpiWriteRead
+
+      # RadioManager RX buffers
+      radioManager.allocate   -> ComCcsds.commsBufferManager.bufferGetCallee
+      radioManager.deallocate -> ComCcsds.commsBufferManager.bufferSendIn
+
+      # Downlink: framer -> radio
+      ComCcsds.FramingSubtopology.dataOut  -> radioManager.dataIn
+      radioManager.dataReturnOut           -> ComCcsds.FramingSubtopology.dataReturnIn
+      radioManager.comStatusOut            -> ComCcsds.FramingSubtopology.comStatusIn
+
+      # Uplink: radio -> frame accumulator
+      radioManager.dataOut                 -> ComCcsds.FramingSubtopology.dataIn
+      ComCcsds.FramingSubtopology.dataReturnOut -> radioManager.dataReturnIn
     }
 
   }

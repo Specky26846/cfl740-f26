@@ -71,8 +71,10 @@ module Cfl740_f26 {
 
   instance timer: Svc.LinuxTimer base id 0x10013000
 
-  instance comDriver: Drv.TcpServer base id 0x10014000
+  # instance comDriver: Drv.TcpServer base id 0x10014000
 
   instance radioSpi: Drv.LinuxSpiDriver base id 0x10015000
+
+  instance radioResetGpio: Drv.LinuxGpioDriver base id 0x10016000
 
 }

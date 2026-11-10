@@ -11,6 +11,8 @@
 // Necessary project-specified types
 #include <Fw/Types/MallocAllocator.hpp>
 
+#include <cstdio>
+
 // Public functions for use in main program are namespaced with deployment module Cfl740_f26
 // This is also the namespace where the topology components are instantiated by FPP.
 namespace Cfl740_f26 {
@@ -53,6 +55,21 @@ void configureTopology() {
 
     // PrmDb file name must be supplied by the using topology
     FileHandling::prmDb.configure("PrmDb.dat");
+
+    if (!radioSpi.open(0, 1, Drv::SpiFrequency::SPI_FREQUENCY_1MHZ)) {
+        printf("[RADIO] Failed to open /dev/spidev0.1\n");
+    } else {
+        printf("[RADIO] Opened /dev/spidev0.1\n");
+    }
+
+    // Radio RST pin: GPIO25 on the Pi 4's main GPIO chip, output, starting HIGH (radio running)
+    if (radioResetGpio.open("/dev/gpiochip0", 25,
+                            Drv::LinuxGpioDriver::GpioConfiguration::GPIO_OUTPUT,
+                            Fw::Logic::HIGH) != Os::File::Status::OP_OK) {
+        printf("[RADIO] Failed to open reset GPIO25\n");
+    } else {
+        printf("[RADIO] Opened reset GPIO25\n");
+    }
 }
 
 void setupTopology(const TopologyState& state) {
@@ -66,9 +83,9 @@ void setupTopology(const TopologyState& state) {
     regCommands();
     // Autocoded configuration. Function provided by autocoder.
     configComponents(state);
-    if (state.hostname != nullptr && state.port != 0) {
-        comDriver.configure(state.hostname, state.port);
-    }
+    // if (state.hostname != nullptr && state.port != 0) {
+    //     comDriver.configure(state.hostname, state.port);
+    // }
     // Project-specific component configuration. Function provided above. May be inlined, if desired.
     configureTopology();
     // Autocoded parameter read from file. Function provided by autocoder.
@@ -78,11 +95,11 @@ void setupTopology(const TopologyState& state) {
     // Autocoded task kick-off (active components). Function provided by autocoder.
     startTasks(state);
     // Initialize socket communication if and only if there is a valid specification
-    if (state.hostname != nullptr && state.port != 0) {
-        Os::TaskString name("ReceiveTask");
-        // Uplink is configured for receive so a socket task is started
-        comDriver.start(name, COMM_PRIORITY, Default::STACK_SIZE);
-    }
+    // if (state.hostname != nullptr && state.port != 0) {
+    //     Os::TaskString name("ReceiveTask");
+    //     // Uplink is configured for receive so a socket task is started
+    //     comDriver.start(name, COMM_PRIORITY, Default::STACK_SIZE);
+    // }
 }
 
 void startRateGroups() {
@@ -100,9 +117,9 @@ void teardownTopology(const TopologyState& state) {
     freeThreads(state);
 
     // Other task clean-up.
-    comDriver.terminate();
-    comDriver.stop();
-    (void)comDriver.join();
+    // comDriver.terminate();
+    // comDriver.stop();
+    // (void)comDriver.join();
 
     // Resource deallocation
     cmdSeq.deallocateBuffer(mallocator);

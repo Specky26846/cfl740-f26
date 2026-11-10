@@ -49,6 +49,7 @@ namespace PingEntries {
     namespace Cfl740_f26_rateGroup_0_5Hz {enum { WARN = 3, FATAL = 5 };}
     namespace Cfl740_f26_rateGroup_0_25Hz {enum { WARN = 3, FATAL = 5 };}
     namespace Cfl740_f26_cmdSeq {enum { WARN = 3, FATAL = 5 };}
+    namespace Cfl740_f26_radioManager {enum { WARN = 3, FATAL = 5 };}
 }  // namespace PingEntries
 
 // Definitions are placed within the same namespace as the FPP module that contains the topology.
