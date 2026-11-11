@@ -136,11 +136,11 @@ module fprimecubesat {
       rateGroup1.RateGroupMemberOut[8] -> navigationManager.run
       rateGroup1.RateGroupMemberOut[9] -> imuManager.run
       rateGroup1.RateGroupMemberOut[10] -> packetBuilder.run
-      rateGroup1.RateGroupMemberOut[11] -> radioManager.run
 
       # Rate group 2 (10Hz - fast periodic)
       rateGroupDriver.CycleOut[Ports_RateGroups.rateGroup2] -> rateGroup2.CycleIn
       rateGroup2.RateGroupMemberOut[0] -> cmdSeq.schedIn
+      rateGroup2.RateGroupMemberOut[1] -> radioManager.run
 
       # Rate group 3 (2.5Hz - infrastructure)
       rateGroupDriver.CycleOut[Ports_RateGroups.rateGroup3] -> rateGroup3.CycleIn
@@ -150,6 +150,7 @@ module fprimecubesat {
       rateGroup3.RateGroupMemberOut[3] -> DataProducts.dpWriter.schedIn
       rateGroup3.RateGroupMemberOut[4] -> DataProducts.dpMgr.schedIn
       rateGroup3.RateGroupMemberOut[5] -> pduManager.run
+      rateGroup3.RateGroupMemberOut[6] -> ComCcsds.aggregator.timeout
     }
 
     connections CdhCore_cmdSeq {

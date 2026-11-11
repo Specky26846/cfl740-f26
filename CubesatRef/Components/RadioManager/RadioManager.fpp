@@ -31,7 +31,7 @@ module Managers {
         async input port run: Svc.Sched drop
 
         @ Raw RAP packet to transmit as-is
-        async input port rapIn: Fw.Com
+        async input port rapIn: Fw.Com drop
 
         @ Moves frame from dataIn onto our thread
         internal port transmitFrame(data: Fw.Buffer, context: ComCfg.FrameContext)
@@ -84,18 +84,23 @@ module Managers {
         @ LoRa coding rate
         param CODING_RATE: U8 default RadioDefaults.CODING_RATE
 
-        @ Ticks to wait for TX done before failure
-        param TX_TIMEOUT_TICKS: U32 default 10
+        @ Ticks (0.1 s each at 10 Hz) to wait for TX done before failure
+        param TX_TIMEOUT_TICKS: U32 default 100
 
-        @ Minimum ticks between the starts of consecutive transmissions (one frame per period)
-        param TX_PERIOD_TICKS: U32 default 5
+        @ Minimum ticks (0.1 s each) between the starts of consecutive transmissions (one frame per period)
+        param TX_PERIOD_TICKS: U32 default 50
 
-        @ Ticks to wait in ERROR before automatically re-initializing the radio
-        param ERROR_RETRY_TICKS: U32 default 10
+        @ Ticks (0.1 s each) to wait in ERROR before automatically re-initializing the radio
+        param ERROR_RETRY_TICKS: U32 default 100
 
-        @ Ticks with no uplink before reverting the radio to its default settings (0 = disabled)
-        param LINK_LOSS_TICKS: U32 default 600
+        @ Ticks (0.1 s each) with no uplink before reverting the radio to its default settings (0 = disabled)
+        param LINK_LOSS_TICKS: U32 default 6000
 
+        @ Ticks (0.1 s each) between RAP beacons (0 = never send beacons)
+        param BEACON_PERIOD_TICKS: U32 default 50
+
+        @ Minimum ticks (0.1 s each) between the end of one transmission and the start of the next (any type)
+        param MIN_TX_GAP_TICKS: U32 default 20
 
         # ------ Events -------
 

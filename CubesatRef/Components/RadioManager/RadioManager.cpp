@@ -99,6 +99,14 @@ void RadioManager ::initRadio() {
     // Now listening
     this->setState(RadioManager_RadioState::RX);
 
+    // A frame held from before a reset/recovery is stale - give it back to ComQueue
+    if (this->m_hasHeld) {
+        this->m_hasHeld = false;
+        if (this->isConnected_dataReturnOut_OutputPort(0)) {
+            this->dataReturnOut_out(0, this->m_heldBuffer, this->m_heldContext);
+        }
+    }
+
     // Start downlink
     if (this->isConnected_comStatusOut_OutputPort(0)) {
         Fw::Success status = Fw::Success::SUCCESS;
@@ -220,7 +228,7 @@ void RadioManager ::finishTx(bool success) {
         }
     }
     
-    if (radioOk) {
+    if (radioOk && !this->m_txFromRap) {
         // Listen for a while before asking ComQueue for the next frame
         this->m_statusPending = true;
     }
@@ -232,6 +240,22 @@ void RadioManager ::finishTx(bool success) {
     this->m_txFromRap = false;  // ready for whatever sends next
     
 }
+
+void RadioManager ::trySendPendingStatus() {
+    if (!this->m_statusPending) {
+        return;
+    }
+    Fw::ParamValid valid;
+    if (this->m_ticksSinceTx >= this->paramGet_TX_PERIOD_TICKS(valid) &&
+        this->m_ticksSinceAnyTx >= this->paramGet_MIN_TX_GAP_TICKS(valid)) {
+        this->m_statusPending = false;
+        if (this->isConnected_comStatusOut_OutputPort(0)) {
+            Fw::Success status = Fw::Success::SUCCESS;
+            this->comStatusOut_out(0, status);
+        }
+    }
+}
+
 void RadioManager ::checkTxDone() {
     this->m_txTicks++;
 
@@ -244,6 +268,7 @@ void RadioManager ::checkTxDone() {
     if ((flag & TX_DONE_BIT) != 0) {
         this->writeRegister(REG_IRQ_FLAGS, TX_DONE_BIT);
         this->finishTx(true);
+        this->trySendPendingStatus(); // next frame now if period has passed
         return;
     }
 
@@ -438,6 +463,8 @@ void RadioManager ::pingIn_handler(FwIndexType portNum, U32 key) {
 void RadioManager ::run_handler(FwIndexType portNum, U32 context) {
     this->m_ticksSinceUplink++;
     this->m_ticksSinceTx++;
+    this->m_ticksSinceBeacon++;
+    this->m_ticksSinceAnyTx++;
     switch (this->m_radioState.e)
     {
     case RadioManager_RadioState::UNINITIALIZED:
@@ -466,18 +493,18 @@ void RadioManager ::run_handler(FwIndexType portNum, U32 context) {
             this->setState(RadioManager_RadioState::RX);
         }
 
-        this->pollRx();
-
-        if (this->m_statusPending) {
+        // Send an F' frame that was held back during a beacon
+        if (this->m_hasHeld && !this->m_txInProgress) {
             Fw::ParamValid valid;
-            if (this->m_ticksSinceTx >= this->paramGet_TX_PERIOD_TICKS(valid)) {
-                this->m_statusPending = false;
-                if (this->isConnected_comStatusOut_OutputPort(0)) {
-                    Fw::Success status = Fw::Success::SUCCESS;
-                    this->comStatusOut_out(0, status);
-                }
+            if (this->m_ticksSinceAnyTx >= this->paramGet_MIN_TX_GAP_TICKS(valid)) {
+                this->m_hasHeld = false;
+                this->transmitFrame_internalInterfaceHandler(this->m_heldBuffer, this->m_heldContext);
+                break;   // now transmitting - nothing else to do this tick
             }
         }
+
+        this->pollRx();
+        this->trySendPendingStatus();
         break;
 
     case RadioManager_RadioState::TX:
@@ -550,8 +577,18 @@ void RadioManager ::RESET_RADIO_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
 // Second step in sending LoRa packet:
 // on each run tick, check if TX done bit is set or if timeout reached, and call finishTx() accordingly
 void RadioManager ::rapIn_handler(FwIndexType portNum, Fw::ComBuffer& data, U32 context) {
-    // radio still sending the last packet - drop this beacon, the next one is a second away
-    if (this->m_txInProgress) {
+    Fw::ParamValid valid;
+    const U32 beaconPeriod = this->paramGet_BEACON_PERIOD_TICKS(valid);
+    const U32 minGap       = this->paramGet_MIN_TX_GAP_TICKS(valid);
+
+    // Drop this beacon unless the radio is free and both timers allow it.
+    // PacketBuilder sends a fresh one every tick, so a dropped beacon is replaced next tick.
+    if (this->m_txInProgress ||
+        this->m_hasHeld ||
+        this->m_radioState != RadioManager_RadioState::RX ||
+        beaconPeriod == 0 ||
+        this->m_ticksSinceBeacon < beaconPeriod ||
+        this->m_ticksSinceAnyTx < minGap) {
         return;
     }
 
@@ -569,11 +606,17 @@ void RadioManager ::rapIn_handler(FwIndexType portNum, Fw::ComBuffer& data, U32 
 void RadioManager ::transmitFrame_internalInterfaceHandler(const Fw::Buffer& data,
                                                            const ComCfg::FrameContext& context) {
     
-    if (this->m_txInProgress) {
-        if (this->isConnected_dataReturnOut_OutputPort(0)) {
+        if (this->m_txInProgress) {
+        if (!this->m_hasHeld) {
+            // ComQueue frame arrived while a beacon is on the air - keep it, send it after
+            this->m_heldBuffer = data;
+            this->m_heldContext = context;
+            this->m_hasHeld = true;
+        } else if (this->isConnected_dataReturnOut_OutputPort(0)) {
+            // shouldn't happen (ComQueue has one frame outstanding) - hand it back
             Fw::Buffer returnBuffer = data;
             this->dataReturnOut_out(0, returnBuffer, context);
-        } 
+        }
         return;
     }
     
@@ -603,8 +646,13 @@ void RadioManager ::transmitFrame_internalInterfaceHandler(const Fw::Buffer& dat
         return;
     }
 
-    this->m_ticksSinceTx = 0;
+    if (this->m_txFromRap) {
+        this->m_ticksSinceBeacon = 0;   // beacon period restarts
+    } else {
+        this->m_ticksSinceTx = 0;       // F' frame period restarts
+    }
+    this->m_ticksSinceAnyTx = 0;        // gap restarts for any transmission
     this->setState(RadioManager_RadioState::TX);
 }
 
-}  // namespace Cfl740_f26
+}  // namespace Managers

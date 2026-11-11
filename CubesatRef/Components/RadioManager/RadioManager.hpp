@@ -110,6 +110,13 @@ class RadioManager final : public RadioManagerComponentBase {
     U32  m_ticksSinceUplink = 0;    // ticks since the last uplink packet was accepted
     bool m_fallbackActive = false;  // using default radio settings after link loss
 
+    U32 m_ticksSinceBeacon = 0;   // ticks since the last RAP beacon started
+    U32 m_ticksSinceAnyTx = 0;    // ticks since ANY transmission (beacon or F' frame) started
+
+    Fw::Buffer m_heldBuffer;
+    ComCfg::FrameContext m_heldContext;
+    bool m_hasHeld = false;
+
     bool spiTransfer(U8* tx_array, U8* rx_array, FwSizeType length);
 
     bool readRegister(U8 addr, U8& value);
@@ -127,6 +134,8 @@ class RadioManager final : public RadioManagerComponentBase {
     bool readFifo(U8* dest, FwSizeType len);
 
     void finishTx(bool success);
+
+    void trySendPendingStatus();
 
     void checkTxDone();
 
@@ -212,6 +221,6 @@ class RadioManager final : public RadioManagerComponentBase {
     void transmitFrame_internalInterfaceHandler(const Fw::Buffer& data, const ComCfg::FrameContext& context) override;
 };
 
-}  // namespace Cfl740_f26
+}  // namespace Managers
 
 #endif
