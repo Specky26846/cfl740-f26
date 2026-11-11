@@ -29,8 +29,9 @@ static constexpr F64 RM3100_COUNTS_PER_UT = 75.0;    // rm3100 at cycle count 20
 
 static const char* const CPU_TEMP_PATH = "/sys/class/thermal/thermal_zone0/temp";
 
+static const char* const FLIGHT_DATA_PATH = "/home/cfl740/Documents/flightData.csv";
 // flightData.csv is a csv file on the SD card that stores the latest readings from each manager
-static const char* const FLIGHT_DATA_PATH = "../Documents/flightData.csv";  // adjust to your SD mount
+
 static const char* const CSV_HEADER =
     "unix_time,packet_count,num_resets,"
     "gyro_x,gyro_y,gyro_z,accel_x,accel_y,accel_z,"
