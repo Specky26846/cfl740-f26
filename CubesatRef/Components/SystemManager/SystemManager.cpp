@@ -38,7 +38,7 @@ void SystemManager::Managers_SystemManagerStateMachine_action_runHealthCheck(
     this->tlmWrite_MemUsage(0.0f);
     this->tlmWrite_TotalComponentFaults(m_totalComponentFaults);
     this->tlmWrite_DegradedTicks(0);
-    this->log_ACTIVITY_LO_HealthCheckComplete();
+    this->log_DIAGNOSTIC_HealthCheckComplete();
     if (this->isConnected_statusLedSet_OutputPort(0)) {
         this->statusLedSet_out(0, Fw::Logic::HIGH);
     }
@@ -154,7 +154,7 @@ void SystemManager::REPORT_STATUS_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
     this->tlmWrite_SystemUptime(m_uptimeSeconds);
     this->tlmWrite_TotalComponentFaults(m_totalComponentFaults);
     this->tlmWrite_DegradedTicks(m_degradedTicks);
-    this->log_ACTIVITY_LO_HealthCheckComplete();
+    this->log_DIAGNOSTIC_HealthCheckComplete();
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
 }
 
