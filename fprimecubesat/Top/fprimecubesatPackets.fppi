@@ -1,165 +1,194 @@
-telemetry packets LedBlinkerPackets {
+telemetry packets fprimecubesatPackets {
 
-  packet CDH id 1 group 1 {
+  # ---------- Group 1: flight essentials ----------
+  packet Nav id 1 group 1 {
+    navigationManager.Latitude
+    navigationManager.Longitude
+    navigationManager.Altitude
+    navigationManager.GroundSpeed
+    navigationManager.NumSatellites
+  }
+
+  packet Health id 2 group 1 {
+    systemManager.SystemState
+    systemManager.TotalComponentFaults
     CdhCore.cmdDisp.CommandsDispatched
+    CdhCore.cmdDisp.CommandErrors
+    pduManager.VBattVoltage
+    pduManager.VBattCurrent
+    radioManager.State
+    radioManager.LastRssi
+    radioManager.LastSnr
+    radioManager.FramesReceived
+    radioManager.FramesSent
+    pduManager.Reg3v3Temp
+    pduManager.Reg5v0Temp
+    tempManager.Temperature
+  }
 
-    FileHandling.fileUplink.FilesReceived
-    FileHandling.fileUplink.PacketsReceived
+  packet Attitude id 3 group 1 {
+    imuManager.AccelX
+    imuManager.AccelY
+    imuManager.AccelZ
+    imuManager.GyroX
+    imuManager.GyroY
+    imuManager.GyroZ
+    imuManager.ImuTemp
+    magnetometerManager.MagX
+    magnetometerManager.MagY
+    magnetometerManager.MagZ
+  }
+
+  # ---------- Group 2: engineering ----------
+  packet Power id 10 group 2 {
+    pduManager.Rail3v3Current
+    pduManager.Rail3v3Voltage
+    pduManager.Rail5v0Current
+    pduManager.Rail5v0Voltage
+    pduManager.VBattCurrent
+    pduManager.VBattRawCurrent
+    pduManager.VBattRawVoltage
+    pduManager.VBattVoltage
+  }
+
+  packet RadioStats id 11 group 2 {
+    radioManager.RxCrcErrors
+    radioManager.RxDropped
+    radioManager.SpiErrors
+    radioManager.TxFailures
+  }
+
+  packet CdhErrors id 12 group 2 {
+    CdhCore.$health.PingLateWarnings
+    CdhCore.events.EventsDropped
+    CdhCore.cmdDisp.CommandsDropped
+    rateGroup1.RgCycleSlips
+    rateGroup1.RgMaxTime
+    rateGroup2.RgCycleSlips
+    rateGroup2.RgMaxTime
+    rateGroup3.RgCycleSlips
+    rateGroup3.RgMaxTime
+    ComCcsds.commsBufferManager.NoBuffs
+    ComCcsds.comQueue.comQueueDepth
+  }
+
+  packet Files id 13 group 2 {
     FileHandling.fileDownlink.FilesSent
     FileHandling.fileDownlink.PacketsSent
-    FileHandling.fileManager.CommandsExecuted
-
-    LedBlinker.cmdSeq.CS_LoadCommands
-    LedBlinker.cmdSeq.CS_CancelCommands
-    LedBlinker.cmdSeq.CS_CommandsExecuted
-    LedBlinker.cmdSeq.CS_SequencesCompleted
-    ComCcsds.comQueue.comQueueDepth
-    ComCcsds.comQueue.buffQueueDepth
-    ComCcsds.commsBufferManager.TotalBuffs
-    ComCcsds.commsBufferManager.CurrBuffs
-    ComCcsds.commsBufferManager.HiBuffs
-    #ComCcsds.tlmSend.SendLevel
-
-    LedBlinker.rateGroup1.RgMaxTime
-    LedBlinker.rateGroup2.RgMaxTime
-    LedBlinker.rateGroup3.RgMaxTime
-  }
-
-  packet CDHErrors id 2 group 1 {
-    CdhCore.$health.PingLateWarnings
-
-    FileHandling.fileUplink.Warnings
     FileHandling.fileDownlink.Warnings
+    FileHandling.fileManager.CommandsExecuted
     FileHandling.fileManager.Errors
-
-    LedBlinker.cmdSeq.CS_Errors
-    ComCcsds.commsBufferManager.NoBuffs
-    ComCcsds.commsBufferManager.EmptyBuffs
-
-    LedBlinker.rateGroup1.RgCycleSlips
-    LedBlinker.rateGroup2.RgCycleSlips
-    LedBlinker.rateGroup3.RgCycleSlips
+    FileHandling.fileUplink.FilesReceived
+    FileHandling.fileUplink.FilesReceivedFailed
+    FileHandling.fileUplink.PacketsReceived
+    FileHandling.fileUplink.Warnings
   }
 
-  packet SystemRes1 id 5 group 2 {
-    LedBlinker.systemResources.MEMORY_TOTAL
-    LedBlinker.systemResources.MEMORY_USED
-    LedBlinker.systemResources.NON_VOLATILE_TOTAL
-    LedBlinker.systemResources.NON_VOLATILE_FREE
+  packet System id 14 group 2 {
+    systemResources.CPU
+    systemResources.MEMORY_USED
+    systemResources.NON_VOLATILE_FREE
+    systemManager.SystemUptime
+    systemManager.DegradedTicks
   }
 
-  packet SystemRes3 id 6 group 2 {
-    LedBlinker.systemResources.CPU
-    LedBlinker.systemResources.CPU_00
-    LedBlinker.systemResources.CPU_01
-    LedBlinker.systemResources.CPU_02
-    LedBlinker.systemResources.CPU_03
-    LedBlinker.systemResources.CPU_04
-    LedBlinker.systemResources.CPU_05
-    LedBlinker.systemResources.CPU_06
-    LedBlinker.systemResources.CPU_07
-    LedBlinker.systemResources.CPU_08
-    LedBlinker.systemResources.CPU_09
-    LedBlinker.systemResources.CPU_10
-    LedBlinker.systemResources.CPU_11
-    LedBlinker.systemResources.CPU_12
-    LedBlinker.systemResources.CPU_13
-    LedBlinker.systemResources.CPU_14
-    LedBlinker.systemResources.CPU_15
-  }
-
-  packet DataProducts id 21 group 3 {
-    DataProducts.dpCat.CatalogDps
-    DataProducts.dpCat.DpsSent
-
-    DataProducts.dpMgr.NumSuccessfulAllocations
-    DataProducts.dpMgr.NumFailedAllocations
-    DataProducts.dpMgr.NumDataProducts
-    DataProducts.dpMgr.NumBytes
-
-    DataProducts.dpWriter.NumBuffersReceived
-    DataProducts.dpWriter.NumBytesWritten
-    DataProducts.dpWriter.NumSuccessfulWrites
-    DataProducts.dpWriter.NumFailedWrites
-    DataProducts.dpWriter.NumErrors
-
-    DataProducts.dpBufferManager.TotalBuffs
-    DataProducts.dpBufferManager.CurrBuffs
-    DataProducts.dpBufferManager.HiBuffs
-    DataProducts.dpBufferManager.NoBuffs
-    DataProducts.dpBufferManager.EmptyBuffs
-  }
-
-  packet Version1 id 22 group 2 {
+  # ---------- Group 3: on request (SEND_PKT) ----------
+  packet Version id 20 group 3 {
     CdhCore.version.FrameworkVersion
     CdhCore.version.ProjectVersion
   }
 
-  packet Version_Library1 id 23 group 2 {
-    CdhCore.version.LibraryVersion01
-    CdhCore.version.LibraryVersion02
-  }
-
-  packet Version_Library2 id 24 group 2 {
-    CdhCore.version.LibraryVersion03
-    CdhCore.version.LibraryVersion04
-  }
-
-  packet Version_Library3 id 25 group 2 {
-    CdhCore.version.LibraryVersion05
-    CdhCore.version.LibraryVersion06
-  }
-
-  packet Version_Library4 id 26 group 2 {
-    CdhCore.version.LibraryVersion07
-    CdhCore.version.LibraryVersion08
-  }
-
-  packet Version_Library5 id 27 group 2 {
-    CdhCore.version.LibraryVersion09
-    CdhCore.version.LibraryVersion10
-  }
-
-  packet Version_Custom1 id 28 group 2 {
-    CdhCore.version.CustomVersion01
-  }
-
-  packet Version_Custom2 id 29 group 2 {
-    CdhCore.version.CustomVersion02
-  }
-
-  packet Version_Custom3 id 30 group 2 {
-    CdhCore.version.CustomVersion03
-  }
-
-  packet Version_Custom4 id 31 group 2 {
-    CdhCore.version.CustomVersion04
-  }
-
-  packet Version_Custom5 id 32 group 2 {
-    CdhCore.version.CustomVersion05
-  }
-
-  packet Version_Custom6 id 33 group 2 {
-    CdhCore.version.CustomVersion06
-  }
-
-  packet Version_Custom7 id 34 group 2 {
-    CdhCore.version.CustomVersion07
-  }
-
-  packet Version_Custom8 id 35 group 2 {
-    CdhCore.version.CustomVersion08
-  }
-
-  packet Version_Custom9 id 36 group 2 {
-    CdhCore.version.CustomVersion09
-  }
-
-  packet Version_Custom10 id 37 group 2 {
-    CdhCore.version.CustomVersion10
-  }
-
 } omit {
-  CdhCore.cmdDisp.CommandErrors
+  # tutorial LEDs
+  led.BlinkCommandCount
+  led.BlinkingState
+  led.LEDTransitions
+  led2.BlinkCommandCount
+  led2.BlinkingState
+  led2.LEDTransitions
+
+  # unused version slots
+  CdhCore.version.CustomVersion01
+  CdhCore.version.CustomVersion02
+  CdhCore.version.CustomVersion03
+  CdhCore.version.CustomVersion04
+  CdhCore.version.CustomVersion05
+  CdhCore.version.CustomVersion06
+  CdhCore.version.CustomVersion07
+  CdhCore.version.CustomVersion08
+  CdhCore.version.CustomVersion09
+  CdhCore.version.CustomVersion10
+  CdhCore.version.LibraryVersion01
+  CdhCore.version.LibraryVersion02
+  CdhCore.version.LibraryVersion03
+  CdhCore.version.LibraryVersion04
+  CdhCore.version.LibraryVersion05
+  CdhCore.version.LibraryVersion06
+  CdhCore.version.LibraryVersion07
+  CdhCore.version.LibraryVersion08
+  CdhCore.version.LibraryVersion09
+  CdhCore.version.LibraryVersion10
+
+  # comms buffer bookkeeping (NoBuffs + comQueueDepth kept in CdhErrors)
+  ComCcsds.comQueue.buffQueueDepth
+  ComCcsds.commsBufferManager.CurrBuffs
+  ComCcsds.commsBufferManager.EmptyBuffs
+  ComCcsds.commsBufferManager.HiBuffs
+  ComCcsds.commsBufferManager.TotalBuffs
+
+  # data products (unused)
+  DataProducts.dpBufferAccumulator.BA_NumQueuedBuffers
+  DataProducts.dpBufferManager.CurrBuffs
+  DataProducts.dpBufferManager.EmptyBuffs
+  DataProducts.dpBufferManager.HiBuffs
+  DataProducts.dpBufferManager.NoBuffs
+  DataProducts.dpBufferManager.TotalBuffs
+  DataProducts.dpCat.CatalogDps
+  DataProducts.dpCat.DpsSent
+  DataProducts.dpMgr.NumBytes
+  DataProducts.dpMgr.NumDataProducts
+  DataProducts.dpMgr.NumFailedAllocations
+  DataProducts.dpMgr.NumSuccessfulAllocations
+  DataProducts.dpWriter.NumBuffersReceived
+  DataProducts.dpWriter.NumBytesWritten
+  DataProducts.dpWriter.NumErrors
+  DataProducts.dpWriter.NumFailedWrites
+  DataProducts.dpWriter.NumSuccessfulWrites
+
+  # command sequencer (add a packet if sequences get used)
+  cmdSeq.CS_CancelCommands
+  cmdSeq.CS_CommandsExecuted
+  cmdSeq.CS_CurrentSequence
+  cmdSeq.CS_Errors
+  cmdSeq.CS_LoadCommands
+  cmdSeq.CS_SequencesCompleted
+
+  # packetizer's own config echo (large arrays)
+  CdhCore.tlmSend.GroupConfigs
+  CdhCore.tlmSend.SectionEnabled
+
+  # misc
+  radioSpi.SPI_Bytes
+  systemManager.CpuUsage
+  systemManager.MemUsage
+
+  # per-core CPU (Pi 4 has 4 cores; total CPU kept in System) and static sizes
+  systemResources.CPU_00
+  systemResources.CPU_01
+  systemResources.CPU_02
+  systemResources.CPU_03
+  systemResources.CPU_04
+  systemResources.CPU_05
+  systemResources.CPU_06
+  systemResources.CPU_07
+  systemResources.CPU_08
+  systemResources.CPU_09
+  systemResources.CPU_10
+  systemResources.CPU_11
+  systemResources.CPU_12
+  systemResources.CPU_13
+  systemResources.CPU_14
+  systemResources.CPU_15
+  systemResources.MEMORY_TOTAL
+  systemResources.NON_VOLATILE_TOTAL
 }

@@ -31,8 +31,8 @@ module Managers {
         # events
         event HealthCheckComplete \
             severity diagnostic \
-            throttle 5 \
-            format "Health check completed"
+            format "Health check completed" \
+            throttle 5
 
         event EnteredDegraded(
             faultCount: U32
