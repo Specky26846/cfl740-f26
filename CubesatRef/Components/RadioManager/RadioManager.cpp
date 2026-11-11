@@ -224,13 +224,13 @@ void RadioManager ::finishTx(bool success) {
         // Listen for a while before asking ComQueue for the next frame
         this->m_statusPending = true;
     }
-    else if (!this->m_txFromRap && this->isConnected_comStatusOut_OutputPort(0)) { {
+    else if (!this->m_txFromRap && this->isConnected_comStatusOut_OutputPort(0)) {
         Fw::Success status = Fw::Success::FAILURE;
         this->comStatusOut_out(0, status);
     }
-
+    
     this->m_txFromRap = false;  // ready for whatever sends next
-    }
+    
 }
 void RadioManager ::checkTxDone() {
     this->m_txTicks++;
