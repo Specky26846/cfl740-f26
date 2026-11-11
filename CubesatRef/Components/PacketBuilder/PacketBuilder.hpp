@@ -9,6 +9,15 @@
 
 #include "CubesatRef/Components/PacketBuilder/PacketBuilderComponentAc.hpp"
 
+#include <iostream>
+#include <ostream>
+#include <sstream>
+#include <string>
+#include <fstream>
+#include <cmath>
+#include <cstdlib>
+#include <limits>
+
 namespace CubesatRef {
 
 class PacketBuilder final : public PacketBuilderComponentBase {
@@ -38,7 +47,10 @@ class PacketBuilder final : public PacketBuilderComponentBase {
     void gpsIn_handler(FwIndexType portNum, const Types::GpsData& data) override;
 
     // serialize the beacon fields in the same order as BEACON_DEFINITION in the encode.py
-    void serializeBeacon(Fw::ComBuffer& beacon);
+    void serializeBeacon(Fw::ComBuffer& beacon, std::ostream& csv);
+
+    // store latest readings in a csv file on the SD card
+    void storeData(const std::string& line);
 
     // Rpi soc temperature in C, 0 if it can't be read
     F64 readCpuTemp();

@@ -10,8 +10,8 @@
 namespace {
 
 // i2c addresses of the two ads7828s (A1/A0 = LL and LH)
-constexpr U8 ADC0_ADDR = 0x48;
-constexpr U8 ADC1_ADDR = 0x4b;
+constexpr U8 ADC0_ADDR = 0x48; // 3V3 rail
+constexpr U8 ADC1_ADDR = 0x4b; // 5V rail
 constexpr U8 CHANNELS_PER_ADC = 8;
 
 // command byte bits - see ads7828 datasheet page 11
@@ -83,11 +83,9 @@ void PduManager::Managers_PduManagerStateMachine_action_doInit(
 
     Drv::I2cStatus status = this->busWrite_out(0, ADC0_ADDR, cmdBuf);
     if (status == Drv::I2cStatus::I2C_OK) {
-        // second adc is optional - it's unpowered when only the 3v3 rail is connected
         cmdBuf.setSize(sizeof(cmd));
-        (void) this->busWrite_out(0, ADC1_ADDR, cmdBuf);
+        status = this->busWrite_out(0, ADC1_ADDR, cmdBuf);
     }
-
 
     if (status == Drv::I2cStatus::I2C_OK) {
         this->log_ACTIVITY_HI_StateChange(PduManager_SensorState::RUNNING);

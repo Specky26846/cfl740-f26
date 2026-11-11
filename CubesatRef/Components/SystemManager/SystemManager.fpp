@@ -31,7 +31,6 @@ module Managers {
         # events
         event HealthCheckComplete \
             severity diagnostic \
-            throttle 5 \
             format "Health check completed"
 
         event EnteredDegraded(

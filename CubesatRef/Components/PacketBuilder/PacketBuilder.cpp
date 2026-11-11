@@ -11,6 +11,11 @@
 #include <Os/FileSystem.hpp>
 #include <Os/Memory.hpp>
 
+#include <iostream>
+#include <ostream>
+#include <sstream>
+#include <string>
+#include <fstream>
 #include <cmath>
 #include <cstdlib>
 #include <limits>
@@ -24,13 +29,25 @@ static constexpr F64 RM3100_COUNTS_PER_UT = 75.0;    // rm3100 at cycle count 20
 
 static const char* const CPU_TEMP_PATH = "/sys/class/thermal/thermal_zone0/temp";
 
+// flightData.csv is a csv file on the SD card that stores the latest readings from each manager
+static const char* const FLIGHT_DATA_PATH = "/home/pi/flightData.csv";  // adjust to your SD mount
+static const char* const CSV_HEADER =
+    "unix_time,packet_count,num_resets,"
+    "gyro_x,gyro_y,gyro_z,accel_x,accel_y,accel_z,"
+    "mag_x,mag_y,mag_z,tmp1,tmp2,bme_temp,bme_pressure,bme_humidity,"
+    "used_memory,free_memory,used_disk,free_disk,cpu_load,cpu_temp,"
+    "batt_v,batt_i,v_3v3,i_3v3,v_5v0,i_5v0,v_vbatt,i_vbatt,temp_3v3_reg,temp_5v0_reg,"
+    "latitude,longitude,altitude,ground_speed,num_satellites,"
+    "rm3100_x,rm3100_y,rm3100_z";
+
 // same as python's struct.pack(fmt, int(value)): truncate toward zero, little-endian,
 // and if the value doesn't fit (or isn't a number) python's except branch writes zeros
-template <typename T>
 
 // truncates floating point value to integer, checks for overflow, and serializes to buffer
 // this is done to match Python truncation behavior in encode.py
-static void packField(Fw::ComBuffer& buf, F64 value) {
+// also appends the truncated value to csv so the stored line matches the downlink
+template <typename T>
+static void packField(Fw::ComBuffer& buf, std::ostream& csv, F64 value) {
     F64 truncated = std::trunc(value);
     if (!std::isfinite(truncated) || truncated < static_cast<F64>(std::numeric_limits<T>::min()) ||
         truncated > static_cast<F64>(std::numeric_limits<T>::max())) {
@@ -38,6 +55,8 @@ static void packField(Fw::ComBuffer& buf, F64 value) {
     }
     const Fw::SerializeStatus stat = buf.serializeFrom(static_cast<T>(truncated), Fw::Endianness::LITTLE);
     FW_ASSERT(stat == Fw::FW_SERIALIZE_OK, stat);
+
+    csv << static_cast<I64>(truncated) << ',';
 }
 
 // pdu adc conversions from the python encoder - volts/amps back to 12-bit ads7828 counts
@@ -89,7 +108,10 @@ void PacketBuilder ::gpsIn_handler(FwIndexType portNum, const Types::GpsData& da
 
 void PacketBuilder ::run_handler(FwIndexType portNum, U32 context) {
     Fw::ComBuffer beacon;
-    this->serializeBeacon(beacon);
+    std::ostringstream csv;
+    this->serializeBeacon(beacon, csv);
+    this->storeData(csv.str());
+
 
     // wrap the beacon straight into the output buffer's memory
     Fw::ComBuffer rap;
@@ -111,7 +133,7 @@ void PacketBuilder ::run_handler(FwIndexType portNum, U32 context) {
 
 
 // field order and formats match BEACON_DEFINITION in ALPHA_TX_LORA.py
-void PacketBuilder ::serializeBeacon(Fw::ComBuffer& beacon) {
+void PacketBuilder ::serializeBeacon(Fw::ComBuffer& beacon, std::ostream& csv) {
     // memory and disk in KiB - bytes overflow the U32 fields on the pi
     Os::Memory::Usage mem = {0, 0};
     if (Os::Memory::getUsage(mem) != Os::Generic::OP_OK) {
@@ -124,61 +146,77 @@ void PacketBuilder ::serializeBeacon(Fw::ComBuffer& beacon) {
         diskFree = 0;
     }
 
-    packField<U32>(beacon, this->getTime().getSeconds());  // unix_time
-    packField<U16>(beacon, m_beaconCount);                  // packet_count
-    packField<U16>(beacon, 0);                              // num_resets - not tracked yet
+    packField<U32>(beacon, csv, this->getTime().getSeconds());  // unix_time
+    packField<U16>(beacon, csv, m_beaconCount);                  // packet_count
+    packField<U16>(beacon, csv, 0);                              // num_resets - not tracked yet
 
     // imu as raw counts
-    packField<I16>(beacon, m_imu.get_gyro().get_x() * IMU_GYRO_LSB_PER_DPS);
-    packField<I16>(beacon, m_imu.get_gyro().get_y() * IMU_GYRO_LSB_PER_DPS);
-    packField<I16>(beacon, m_imu.get_gyro().get_z() * IMU_GYRO_LSB_PER_DPS);
-    packField<I16>(beacon, m_imu.get_accel().get_x() * IMU_ACCEL_LSB_PER_G);
-    packField<I16>(beacon, m_imu.get_accel().get_y() * IMU_ACCEL_LSB_PER_G);
-    packField<I16>(beacon, m_imu.get_accel().get_z() * IMU_ACCEL_LSB_PER_G);
+    packField<I16>(beacon, csv, m_imu.get_gyro().get_x() * IMU_GYRO_LSB_PER_DPS);
+    packField<I16>(beacon, csv, m_imu.get_gyro().get_y() * IMU_GYRO_LSB_PER_DPS);
+    packField<I16>(beacon, csv, m_imu.get_gyro().get_z() * IMU_GYRO_LSB_PER_DPS);
+    packField<I16>(beacon, csv, m_imu.get_accel().get_x() * IMU_ACCEL_LSB_PER_G);
+    packField<I16>(beacon, csv, m_imu.get_accel().get_y() * IMU_ACCEL_LSB_PER_G);
+    packField<I16>(beacon, csv, m_imu.get_accel().get_z() * IMU_ACCEL_LSB_PER_G);
 
     // mag_x/y/z - the icm-20649 has no magnetometer, the rm3100 goes in its own fields below
-    packField<I16>(beacon, 0);
-    packField<I16>(beacon, 0);
-    packField<I16>(beacon, 0);
+    packField<I16>(beacon, csv, 0);
+    packField<I16>(beacon, csv, 0);
+    packField<I16>(beacon, csv, 0);
 
-    packField<I16>(beacon, m_temp);            // tmp1 - tmp102, whole degrees C
-    packField<I16>(beacon, m_imu.get_temp());  // tmp2 - imu die temp, whole degrees C
+    packField<I16>(beacon, csv, m_temp);            // tmp1 - tmp102, whole degrees C
+    packField<I16>(beacon, csv, m_imu.get_temp());  // tmp2 - imu die temp, whole degrees C
 
     // no bme280 on this board
-    packField<I16>(beacon, 0);  // bme_temp
-    packField<U32>(beacon, 0);  // bme_pressure
-    packField<U16>(beacon, 0);  // bme_humidity
+    packField<I16>(beacon, csv, 0);  // bme_temp
+    packField<U32>(beacon, csv, 0);  // bme_pressure
+    packField<U16>(beacon, csv, 0);  // bme_humidity
 
-    packField<U32>(beacon, static_cast<F64>(mem.used) / 1024.0);              // used_memory
-    packField<U32>(beacon, static_cast<F64>(mem.total - mem.used) / 1024.0);  // free_memory
-    packField<U32>(beacon, static_cast<F64>(diskTotal - diskFree) / 1024.0);  // used_disk
-    packField<U32>(beacon, static_cast<F64>(diskFree) / 1024.0);              // free_disk
-    packField<U16>(beacon, 0);                                                // cpu_load - TODO
-    packField<I16>(beacon, this->readCpuTemp() * 10);                         // cpu_temp
+    packField<U32>(beacon, csv, static_cast<F64>(mem.used) / 1024.0);              // used_memory
+    packField<U32>(beacon, csv, static_cast<F64>(mem.total - mem.used) / 1024.0);  // free_memory
+    packField<U32>(beacon, csv, static_cast<F64>(diskTotal - diskFree) / 1024.0);  // used_disk
+    packField<U32>(beacon, csv, static_cast<F64>(diskFree) / 1024.0);              // free_disk
+    packField<U16>(beacon, csv, 0);                                                // cpu_load - TODO
+    packField<I16>(beacon, csv, this->readCpuTemp() * 10);                         // cpu_temp
 
     // power - batt_* is the raw battery input, v/i_vbatt is after the switch
-    packField<U16>(beacon, voltageToCounts(m_power.get_vbattRawV(), 100.0, 12.0));
-    packField<U16>(beacon, currentToCounts(m_power.get_vbattRawI(), 0.012));
-    packField<U16>(beacon, voltageToCounts(m_power.get_v3v3(), 100.0, 60.4));
-    packField<U16>(beacon, currentToCounts(m_power.get_i3v3(), 0.005));
-    packField<U16>(beacon, voltageToCounts(m_power.get_v5v0(), 100.0, 33.2));
-    packField<U16>(beacon, currentToCounts(m_power.get_i5v0(), 0.012));
-    packField<U16>(beacon, voltageToCounts(m_power.get_vbattV(), 100.0, 12.0));
-    packField<U16>(beacon, currentToCounts(m_power.get_vbattI(), 0.012));
-    packField<U16>(beacon, regTempToCounts(m_power.get_temp3v3Reg()));
-    packField<U16>(beacon, regTempToCounts(m_power.get_temp5v0Reg()));
+    packField<U16>(beacon, csv, voltageToCounts(m_power.get_vbattRawV(), 100.0, 12.0));
+    packField<U16>(beacon, csv, currentToCounts(m_power.get_vbattRawI(), 0.012));
+    packField<U16>(beacon, csv, voltageToCounts(m_power.get_v3v3(), 100.0, 60.4));
+    packField<U16>(beacon, csv, currentToCounts(m_power.get_i3v3(), 0.005));
+    packField<U16>(beacon, csv, voltageToCounts(m_power.get_v5v0(), 100.0, 33.2));
+    packField<U16>(beacon, csv, currentToCounts(m_power.get_i5v0(), 0.012));
+    packField<U16>(beacon, csv, voltageToCounts(m_power.get_vbattV(), 100.0, 12.0));
+    packField<U16>(beacon, csv, currentToCounts(m_power.get_vbattI(), 0.012));
+    packField<U16>(beacon, csv, regTempToCounts(m_power.get_temp3v3Reg()));
+    packField<U16>(beacon, csv, regTempToCounts(m_power.get_temp5v0Reg()));
 
     // gps
-    packField<I32>(beacon, m_gps.get_latitude() * 1e7);
-    packField<I32>(beacon, m_gps.get_longitude() * 1e7);
-    packField<U32>(beacon, m_gps.get_altitude() * 1e5);
-    packField<U16>(beacon, m_gps.get_groundSpeed() * 1000);
-    packField<U8>(beacon, m_gps.get_numSatellites());
+    packField<I32>(beacon, csv, m_gps.get_latitude() * 1e7);
+    packField<I32>(beacon, csv, m_gps.get_longitude() * 1e7);
+    packField<U32>(beacon, csv, m_gps.get_altitude() * 1e5);
+    packField<U16>(beacon, csv, m_gps.get_groundSpeed() * 1000);
+    packField<U8>(beacon, csv, m_gps.get_numSatellites());
 
     // rm3100 as raw counts
-    packField<I32>(beacon, m_mag.get_x() * RM3100_COUNTS_PER_UT);
-    packField<I32>(beacon, m_mag.get_y() * RM3100_COUNTS_PER_UT);
-    packField<I32>(beacon, m_mag.get_z() * RM3100_COUNTS_PER_UT);
+    packField<I32>(beacon, csv, m_mag.get_x() * RM3100_COUNTS_PER_UT);
+    packField<I32>(beacon, csv, m_mag.get_y() * RM3100_COUNTS_PER_UT);
+    packField<I32>(beacon, csv, m_mag.get_z() * RM3100_COUNTS_PER_UT);
+}
+
+void PacketBuilder::storeData(const std::string& line) {
+
+    const bool newFile = !std::ifstream(FLIGHT_DATA_PATH).good();
+
+    std::ofstream outFile(FLIGHT_DATA_PATH, std::ios::app);
+    if (!outFile) {
+        return;  // later: log an event here
+    }
+    if (newFile) {
+        outFile << CSV_HEADER << '\n';
+    }
+
+    // drop the trailing comma from the last packField
+    outFile << line.substr(0, line.empty() ? 0 : line.size() - 1) << std::endl;
 }
 
 // sysfs reports millidegrees as ascii, e.g. "48312\n"
