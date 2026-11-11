@@ -11,7 +11,7 @@ namespace {
 
 // i2c addresses of the two ads7828s (A1/A0 = LL and LH)
 constexpr U8 ADC0_ADDR = 0x48;
-constexpr U8 ADC1_ADDR = 0x49;
+constexpr U8 ADC1_ADDR = 0x4b;
 constexpr U8 CHANNELS_PER_ADC = 8;
 
 // command byte bits - see ads7828 datasheet page 11
