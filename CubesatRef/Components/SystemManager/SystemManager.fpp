@@ -30,7 +30,8 @@ module Managers {
 
         # events
         event HealthCheckComplete \
-            severity activity low \
+            severity diagnostic \
+            throttle 5 \
             format "Health check completed"
 
         event EnteredDegraded(
