@@ -138,6 +138,8 @@ class RadioManager final : public RadioManagerComponentBase {
 
     void dropRx();
 
+    void trySendPendingStatus();   // send the deferred SUCCESS once the TX period has elapsed
+
     // ----------------------------------------------------------------------
     // Handler implementations for typed input ports
     // ----------------------------------------------------------------------

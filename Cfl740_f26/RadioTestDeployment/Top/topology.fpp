@@ -8,6 +8,7 @@ module Cfl740_f26 {
     rateGroup_1Hz
     rateGroup_0_5Hz
     rateGroup_0_25Hz
+    rateGroup_10Hz
   }
 
   deployment topology RadioTestDeployment {
@@ -25,6 +26,7 @@ module Cfl740_f26 {
   # Instances used in the topology
   # ----------------------------------------------------------------------
     instance chronoTime
+    instance rateGroup_10Hz
     instance rateGroup_1Hz
     instance rateGroup_0_5Hz
     instance rateGroup_0_25Hz
@@ -104,6 +106,10 @@ module Cfl740_f26 {
       # timer to drive rate group
       timer.CycleOut -> rateGroupDriver.CycleIn
 
+      # 10Hz rate group
+      rateGroupDriver.CycleOut[Ports_RateGroups.rateGroup_10Hz] -> rateGroup_10Hz.CycleIn
+      rateGroup_10Hz.RateGroupMemberOut[0] -> radioManager.run
+
       # 1Hz rate group
       rateGroupDriver.CycleOut[Ports_RateGroups.rateGroup_1Hz] -> rateGroup_1Hz.CycleIn
       # rateGroup_1Hz.RateGroupMemberOut[0] -> CdhCore.tlmSend.Run
@@ -112,7 +118,7 @@ module Cfl740_f26 {
       rateGroup_1Hz.RateGroupMemberOut[3] -> ComCcsds.comQueue.run
       # rateGroup_1Hz.RateGroupMemberOut[4] -> ComCcsds.aggregator.timeout
       rateGroup_1Hz.RateGroupMemberOut[5] -> CdhCore.cmdDisp.run
-      rateGroup_1Hz.RateGroupMemberOut[6] -> radioManager.run
+      # rateGroup_1Hz.RateGroupMemberOut[6] -> radioManager.run
 
       # 0.5Hz rate group
       rateGroupDriver.CycleOut[Ports_RateGroups.rateGroup_0_5Hz] -> rateGroup_0_5Hz.CycleIn

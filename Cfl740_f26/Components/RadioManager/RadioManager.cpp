@@ -242,6 +242,7 @@ void RadioManager ::checkTxDone() {
     if ((flag & TX_DONE_BIT) != 0) {
         this->writeRegister(REG_IRQ_FLAGS, TX_DONE_BIT);
         this->finishTx(true);
+        this->trySendPendingStatus();   // next frame now, if the period has already passed
         return;
     }
 
@@ -416,6 +417,20 @@ void RadioManager ::dropRx() {
     this->writeRegister(REG_IRQ_FLAGS, IRQ_CLEAR_ALL);
 }
 
+void RadioManager ::trySendPendingStatus() {
+    if (!this->m_statusPending) {
+        return;
+    }
+    Fw::ParamValid valid;
+    if (this->m_ticksSinceTx >= this->paramGet_TX_PERIOD_TICKS(valid)) {
+        this->m_statusPending = false;
+        if (this->isConnected_comStatusOut_OutputPort(0)) {
+            Fw::Success status = Fw::Success::SUCCESS;
+            this->comStatusOut_out(0, status);
+        }
+    }
+}
+
 void RadioManager ::dataIn_handler(FwIndexType portNum, Fw::Buffer& data, const ComCfg::FrameContext& context) {
     this->transmitFrame_internalInterfaceInvoke(data, context);
 }
@@ -465,17 +480,7 @@ void RadioManager ::run_handler(FwIndexType portNum, U32 context) {
         }
 
         this->pollRx();
-
-        if (this->m_statusPending) {
-            Fw::ParamValid valid;
-            if (this->m_ticksSinceTx >= this->paramGet_TX_PERIOD_TICKS(valid)) {
-                this->m_statusPending = false;
-                if (this->isConnected_comStatusOut_OutputPort(0)) {
-                    Fw::Success status = Fw::Success::SUCCESS;
-                    this->comStatusOut_out(0, status);
-                }
-            }
-        }
+        this->trySendPendingStatus();
         break;
 
     case RadioManager_RadioState::TX:

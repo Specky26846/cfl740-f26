@@ -26,6 +26,12 @@ module Cfl740_f26 {
   # Active component instances
   # ----------------------------------------------------------------------
 
+  # 10Hz rate group (divisor 1 of 10Hz base clock)
+  instance rateGroup_10Hz: Svc.ActiveRateGroup base id 0x10006000 \
+    queue size Default.QUEUE_SIZE \
+    stack size Default.STACK_SIZE \
+    priority 44
+
   # 1Hz rate group (divisor 1 of 1Hz base clock)
   instance rateGroup_1Hz: Svc.ActiveRateGroup base id 0x10001000 \
     queue size Default.QUEUE_SIZE \

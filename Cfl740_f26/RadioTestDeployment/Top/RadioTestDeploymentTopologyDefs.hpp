@@ -45,6 +45,7 @@
  * ```
  */
 namespace PingEntries {
+    namespace Cfl740_f26_rateGroup_10Hz {enum { WARN = 3, FATAL = 5 };}
     namespace Cfl740_f26_rateGroup_1Hz {enum { WARN = 3, FATAL = 5 };}
     namespace Cfl740_f26_rateGroup_0_5Hz {enum { WARN = 3, FATAL = 5 };}
     namespace Cfl740_f26_rateGroup_0_25Hz {enum { WARN = 3, FATAL = 5 };}

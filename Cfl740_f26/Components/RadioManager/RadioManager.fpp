@@ -82,17 +82,17 @@ module Cfl740_f26 {
         @ LoRa coding rate
         param CODING_RATE: U8 default RadioDefaults.CODING_RATE
 
-        @ Ticks to wait for TX done before failure
-        param TX_TIMEOUT_TICKS: U32 default 10
+        @ Ticks (0.1s each) to wait for TX done before failure
+        param TX_TIMEOUT_TICKS: U32 default 100
 
-        @ Minimum ticks between the starts of consecutive transmissions (one frame per period)
-        param TX_PERIOD_TICKS: U32 default 5
+        @ Minimum ticks (0.1s each) between the starts of consecutive transmissions (one frame per period)
+        param TX_PERIOD_TICKS: U32 default 50
 
-        @ Ticks to wait in ERROR before automatically re-initializing the radio
-        param ERROR_RETRY_TICKS: U32 default 10
+        @ Ticks (0.1s each) to wait in ERROR before automatically re-initializing the radio
+        param ERROR_RETRY_TICKS: U32 default 100
 
-        @ Ticks with no uplink before reverting the radio to its default settings (0 = disabled)
-        param LINK_LOSS_TICKS: U32 default 600
+        @ Ticks (0.1s each) with no uplink before reverting the radio to its default settings (0 = disabled)
+        param LINK_LOSS_TICKS: U32 default 6000
 
 
         # ------ Events -------
