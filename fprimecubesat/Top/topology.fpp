@@ -74,7 +74,7 @@ module fprimecubesat {
   # Telemetry packets (only used when TlmPacketizer is used)
   # ----------------------------------------------------------------------
 
-    # include "fprimecubesatPackets.fppi"
+    include "fprimecubesatPackets.fppi"
 
   # ----------------------------------------------------------------------
   # Direct graph specifiers
