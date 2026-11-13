@@ -19,8 +19,8 @@ register_fprime_library(
         "${CMAKE_CURRENT_LIST_DIR}/CameraComponent.fpp"
     SOURCES
         "${CMAKE_CURRENT_LIST_DIR}/CameraComponent.cpp"
-#   DEPENDS
-#       MyPackage_MyOtherModule
+    DEPENDS
+        CubesatRef_Components_Types
 )
 
 ### Unit Tests ###

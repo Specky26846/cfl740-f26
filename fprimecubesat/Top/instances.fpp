@@ -60,6 +60,18 @@ module fprimecubesat {
     stack size Default.STACK_SIZE \
     priority 117
 
+  # Camera
+  instance camera: CubesatRef.CameraComponent base id 0x10029000 \
+    queue size Default.QUEUE_SIZE \
+    stack size Default.STACK_SIZE \
+    priority 30
+
+  # AprilTag processing
+  instance aprilTag: Vision.AprilTag base id 0x1002A000 \
+    queue size 8 \
+    stack size 256 * 1024 \
+    priority 30
+
   # ----------------------------------------------------------------------
   # Manager component instances (1Hz rate group)
   # ----------------------------------------------------------------------

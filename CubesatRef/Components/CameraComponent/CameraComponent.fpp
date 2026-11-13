@@ -19,6 +19,9 @@ module CubesatRef {
 
         @ A count of the number of photos successfully taken
         telemetry PhotoCount: U32
+
+        @ Send saved image path to port after image capture finishes
+        output port imageCaptured: Managers.ImageFile
         
         ##############################################################################
         #### Uncomment the following examples to start customizing your component ####
@@ -59,6 +62,7 @@ module CubesatRef {
 
         @Port to set the value of a parameter
         param set port prmSetOut
+    
 
     }
 }

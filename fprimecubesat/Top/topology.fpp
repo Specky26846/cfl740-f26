@@ -37,6 +37,8 @@ module fprimecubesat {
     instance timer
     instance comDriver
     instance cmdSeq
+    instance camera
+    instance aprilTag
 
     # Manager instances
     instance systemManager
@@ -77,6 +79,11 @@ module fprimecubesat {
   # ----------------------------------------------------------------------
   # Direct graph specifiers
   # ----------------------------------------------------------------------
+    connections Images {
+      # Send the saved image path from Camera to AprilTag
+      camera.imageCaptured -> aprilTag.processImage
+    }
+
     connections fprimecubesat {
       # Rate Group 1 (1Hz cycle) output is connected to led's run input
       rateGroup1.RateGroupMemberOut[4] -> led.run
