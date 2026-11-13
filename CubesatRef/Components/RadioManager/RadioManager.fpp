@@ -152,6 +152,11 @@ module Managers {
             severity diagnostic \
             format "RX {} bytes, RSSI {} dBm, SNR {} dB: {}"
 
+        @ A packet was sent (debug view of its contents)
+        event PacketSent(numBytes: U32) \
+            severity activity low \
+            format "Beacon TX {} bytes sent."
+
         @ Radio is retrying initialization after an error
         event RadioRecoveryAttempt(attempt: U32) \
             severity warning low \

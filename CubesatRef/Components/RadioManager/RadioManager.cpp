@@ -208,6 +208,9 @@ void RadioManager ::finishTx(bool success) {
     if (success) {
         m_framesTransmitted++;
         this->tlmWrite_FramesSent(m_framesTransmitted);
+        if (this->m_txFromRap) {
+            this->log_ACTIVITY_LO_PacketSent(static_cast<U32>(m_txBuffer.getSize()));
+        }
     }
     else {
         m_txFailures++;
