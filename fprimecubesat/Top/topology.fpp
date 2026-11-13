@@ -49,6 +49,7 @@ module fprimecubesat {
     instance pduManager
     instance radioManager
     instance packetBuilder
+    instance cameraComponent
 
     # Bus driver instances
     instance imuI2cDriver

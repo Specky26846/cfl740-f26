@@ -61,6 +61,14 @@ module fprimecubesat {
     priority 117
 
   # ----------------------------------------------------------------------
+  # Manager component instances (0.1Hz rate group)
+  # ----------------------------------------------------------------------
+  instance cameraComponent: Managers.CameraComponent base id 0x10009000 \
+    queue size Default.QUEUE_SIZE \
+    stack size Default.STACK_SIZE \
+    priority 50
+
+  # ----------------------------------------------------------------------
   # Manager component instances (1Hz rate group)
   # ----------------------------------------------------------------------
 

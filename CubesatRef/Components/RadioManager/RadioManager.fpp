@@ -1,7 +1,7 @@
 module Managers {
     @ Default parameters and link loss fallbacks
     module RadioDefaults {
-        constant FREQUENCY_HZ = 437000000
+        constant FREQUENCY_HZ = 437075000
         constant TX_POWER_DBM = 14
         constant SPREADING_FACTOR = 7
         constant BANDWIDTH = 7

@@ -1,4 +1,4 @@
-module CubesatRef {
+module Managers {
     @ Camera Module Component
     active component CameraComponent {
 

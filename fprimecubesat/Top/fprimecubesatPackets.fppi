@@ -90,6 +90,7 @@ telemetry packets fprimecubesatPackets {
     systemResources.NON_VOLATILE_FREE
     systemManager.SystemUptime
     systemManager.DegradedTicks
+    cameraComponent.PhotoCount
   }
 
   # ---------- Group 3: on request (SEND_PKT) ----------

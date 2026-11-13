@@ -9,7 +9,7 @@
 
 #include "CubesatRef/Components/CameraComponent/CameraComponentComponentAc.hpp"
 
-namespace CubesatRef {
+namespace Managers {
 
 class CameraComponent final : public CameraComponentComponentBase {
   public:

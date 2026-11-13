@@ -16,7 +16,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-namespace CubesatRef {
+namespace Managers {
 
 // ----------------------------------------------------------------------
 // Helper: execute a command and wait for completion
