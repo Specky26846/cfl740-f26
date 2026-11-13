@@ -14,6 +14,7 @@ module Managers {
         async input port tempHealth: Managers.ComponentHealth
         async input port gpsHealth: Managers.ComponentHealth
         async input port magHealth: Managers.ComponentHealth
+        async input port imuHealth: Managers.ComponentHealth
 
         # gpio for status led
         output port statusLedSet: Drv.GpioWrite
@@ -27,6 +28,7 @@ module Managers {
         async command CLEAR_TEMP_FAULT opcode 5
         async command CLEAR_GPS_FAULT opcode 6
         async command CLEAR_MAG_FAULT opcode 7
+        async command CLEAR_IMU_FAULT opcode 8
 
         # events
         event HealthCheckComplete \

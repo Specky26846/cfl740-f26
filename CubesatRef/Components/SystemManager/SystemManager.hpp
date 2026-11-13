@@ -35,6 +35,7 @@ class SystemManager final : public SystemManagerComponentBase {
     void tempHealth_handler(FwIndexType portNum, bool healthy) override;
     void gpsHealth_handler(FwIndexType portNum, bool healthy) override;
     void magHealth_handler(FwIndexType portNum, bool healthy) override;
+    void imuHealth_handler(FwIndexType portNum, bool healthy) override;
 
     // command handlers
     void REPORT_STATUS_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) override;
@@ -45,6 +46,7 @@ class SystemManager final : public SystemManagerComponentBase {
     void CLEAR_TEMP_FAULT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) override;
     void CLEAR_GPS_FAULT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) override;
     void CLEAR_MAG_FAULT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) override;
+    void CLEAR_IMU_FAULT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) override;
 
     U64 m_uptimeSeconds = 0;
     U32 m_totalComponentFaults = 0;
@@ -58,6 +60,7 @@ class SystemManager final : public SystemManagerComponentBase {
     bool m_tempFaultActive = false;
     bool m_gpsFaultActive = false;
     bool m_magFaultActive = false;
+    bool m_imuFaultActive = false;
     bool m_ledToggle = false;
 
     // auto-escalate to reboot after this many ticks in degraded (~500 seconds at 1Hz)

@@ -182,7 +182,7 @@ module fprimecubesat {
       pduManager.busWrite -> pduI2cDriver.write
 
       # Component health reporting to SystemManager
-      imuManager.healthOut -> systemManager.sensorHealth
+      imuManager.healthOut -> systemManager.imuHealth
       tempManager.healthOut -> systemManager.tempHealth
       navigationManager.healthOut -> systemManager.gpsHealth
       magnetometerManager.healthOut -> systemManager.magHealth

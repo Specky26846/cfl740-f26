@@ -25,6 +25,13 @@ module Managers {
             severity activity high \
             format "IMU calibration started"
 
+        event ImuReading( \
+            accelX: F32, accelY: F32, accelZ: F32, \
+            gyroX: F32, gyroY: F32, gyroZ: F32, \
+            imuTemp: F32) \
+            severity activity low \
+            format "IMU reading - Accel (m/s^2): [{}, {}, {}], Gyro (deg/s): [{}, {}, {}], Temp (C): {}"
+
         # accel in m/s^2
         telemetry AccelX: F32
         telemetry AccelY: F32

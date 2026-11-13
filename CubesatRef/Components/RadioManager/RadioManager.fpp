@@ -154,7 +154,7 @@ module Managers {
 
         @ A packet was sent (debug view of its contents)
         event PacketSent(numBytes: U32) \
-            severity activity low \
+            severity activity high \
             format "Beacon TX {} bytes sent."
 
         @ Radio is retrying initialization after an error
