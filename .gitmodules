@@ -1,3 +1,6 @@
 [submodule "lib/fprime"]
 	path = lib/fprime
 	url = https://github.com/nasa/fprime.git
+[submodule "lib/apriltag"]
+	path = lib/apriltag
+	url = https://github.com/AprilRobotics/apriltag.git

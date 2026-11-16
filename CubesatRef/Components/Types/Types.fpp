@@ -56,5 +56,9 @@ module Managers {
     port PduSample(data: Types.PowerData)
     port GpsSample(data: Types.GpsData)
 
+    @ Path to a completed image that is ready to read
+    port ImageFile(imagePath: string size 512)
+
+
 
 }

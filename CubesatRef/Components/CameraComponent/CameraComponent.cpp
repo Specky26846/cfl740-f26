@@ -5,6 +5,7 @@
 // ======================================================================
 
 #include "CubesatRef/Components/CameraComponent/CameraComponent.hpp"
+#include <Fw/Types/StringTemplate.hpp>
 
 #include <cstdio>
 #include <cstdlib>
@@ -190,6 +191,12 @@ void CameraComponent::TAKE_PHOTO_cmdHandler(
 
         // Capture successful
         this->tlmWrite_PhotoCount(++this->m_photoCount);
+
+        // Send the saved image path through the output port
+        if (this->isConnected_imageCaptured_OutputPort(0)) {
+            Fw::StringTemplate<512> savedImagePath(imagePath.c_str());
+            this->imageCaptured_out(0, savedImagePath);
+        }
 
         this->cmdResponse_out(
             opCode, cmdSeq, Fw::CmdResponse::OK
