@@ -41,6 +41,6 @@ class CameraComponent final : public CameraComponentComponentBase {
     U32 m_photoCount = 0;
 };
 
-}  // namespace ProjectZero
+}  // namespace Managers
 
 #endif

@@ -210,4 +210,4 @@ void CameraComponent::TAKE_PHOTO_cmdHandler(
     }
 }
 
-} // namespace CubesatRef
+} // namespace Managers

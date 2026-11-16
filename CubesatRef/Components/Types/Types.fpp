@@ -59,6 +59,4 @@ module Managers {
     @ Path to a completed image that is ready to read
     port ImageFile(imagePath: string size 512)
 
-
-
 }
