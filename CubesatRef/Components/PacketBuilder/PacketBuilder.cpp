@@ -12,6 +12,8 @@
 #include <Os/Memory.hpp>
 
 #include <iostream>
+#include <cstdio>
+#include <ctime>
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -29,7 +31,7 @@ static constexpr F64 RM3100_COUNTS_PER_UT = 75.0;    // rm3100 at cycle count 20
 
 static const char* const CPU_TEMP_PATH = "/sys/class/thermal/thermal_zone0/temp";
 
-static const char* const FLIGHT_DATA_PATH = "/home/cfl740/Documents/flightData.csv";
+static const char* const FLIGHT_DATA_PATH = "/home/cfl740/Documents/flightData_%Y-%m-%d.csv";
 // flightData.csv is a csv file on the SD card that stores the latest readings from each manager
 
 static const char* const CSV_HEADER =
@@ -206,9 +208,15 @@ void PacketBuilder ::serializeBeacon(Fw::ComBuffer& beacon, std::ostream& csv) {
 
 void PacketBuilder::storeData(const std::string& line) {
 
-    const bool newFile = !std::ifstream(FLIGHT_DATA_PATH).good();
+    const time_t now = this->getTime().getSeconds();
+    struct tm utc;
+    gmtime_r(&now, &utc);
+    char new_path[128];
+    strftime(new_path, sizeof(new_path), FLIGHT_DATA_PATH, &utc);
 
-    std::ofstream outFile(FLIGHT_DATA_PATH, std::ios::app);
+    const bool newFile = !std::ifstream(new_path).good();
+
+    std::ofstream outFile(new_path, std::ios::app);
     if (!outFile) {
         return;  // later: log an event here
     }

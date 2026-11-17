@@ -2,9 +2,6 @@ module Managers {
     @ Camera Module Component
     active component CameraComponent {
 
-        # One async command/port is required for active components
-        # This should be overridden by the developers with a useful command/port
-
         @ Command to take a photo using a specified camera and file path
         async command TAKE_PHOTO(
             cameraId: U32 @< Camera index
@@ -22,25 +19,6 @@ module Managers {
 
         @ Send saved image path to port after image capture finishes
         output port imageCaptured: Managers.ImageFile
-        
-        ##############################################################################
-        #### Uncomment the following examples to start customizing your component ####
-        ##############################################################################
-
-        # @ Example async command
-        # async command COMMAND_NAME(param_name: U32)
-
-        # @ Example telemetry counter
-        # telemetry ExampleCounter: U64
-
-        # @ Example event
-        # event ExampleStateEvent(example_state: Fw.On) severity activity high id 0 format "State set to {}"
-
-        # @ Example port: receiving calls from the rate group
-        # sync input port run: Svc.Sched
-
-        # @ Example parameter
-        # param PARAMETER_NAME: U32
 
         ###############################################################################
         # Standard AC Ports: Required for Channels, Events, Commands, and Parameters  #

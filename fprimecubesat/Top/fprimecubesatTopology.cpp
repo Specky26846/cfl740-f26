@@ -61,15 +61,15 @@ void configureTopology() {
         Fw::Logger::log("[ERROR] Failed to open GPIO pin 13\n");
     }
     Os::File::Status status2 =
-        gpioDriver2.open("/dev/gpiochip4", 17, Drv::LinuxGpioDriver::GpioConfiguration::GPIO_OUTPUT);
+        gpioDriver2.open("/dev/gpiochip4", 16, Drv::LinuxGpioDriver::GpioConfiguration::GPIO_OUTPUT);
     if (status2 != Os::File::Status::OP_OK) {
-        Fw::Logger::log("[ERROR] Failed to open GPIO pin 17\n");
+        Fw::Logger::log("[ERROR] Failed to open GPIO pin 16\n");
     }
-    // TODO: pin 27 is a placeholder for led2 - confirm against real wiring and update
+
     Os::File::Status status3 =
-        gpioDriver3.open("/dev/gpiochip4", 27, Drv::LinuxGpioDriver::GpioConfiguration::GPIO_OUTPUT);
+        gpioDriver3.open("/dev/gpiochip4", 26, Drv::LinuxGpioDriver::GpioConfiguration::GPIO_OUTPUT);
     if (status3 != Os::File::Status::OP_OK) {
-        Fw::Logger::log("[ERROR] Failed to open GPIO pin 27\n");
+        Fw::Logger::log("[ERROR] Failed to open GPIO pin 26\n");
     }
 
     // I2C driver for IMU (IMUManager) - Raspberry Pi 4 I2C bus 1
