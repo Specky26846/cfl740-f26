@@ -10,7 +10,6 @@ module Managers {
 
         # async so health signals go on SystemManager's queue and return immediately
         # - avoids blocking the sensor component's thread while SystemManager processes the fault
-        async input port sensorHealth: Managers.ComponentHealth
         async input port tempHealth: Managers.ComponentHealth
         async input port gpsHealth: Managers.ComponentHealth
         async input port magHealth: Managers.ComponentHealth
@@ -24,11 +23,10 @@ module Managers {
         async command INJECT_COMPONENT_FAULT opcode 1
         async command CLEAR_FAULT opcode 2
         async command ESCALATE opcode 3
-        async command CLEAR_SENSOR_FAULT opcode 4
-        async command CLEAR_TEMP_FAULT opcode 5
-        async command CLEAR_GPS_FAULT opcode 6
-        async command CLEAR_MAG_FAULT opcode 7
-        async command CLEAR_IMU_FAULT opcode 8
+        async command CLEAR_TEMP_FAULT opcode 4
+        async command CLEAR_GPS_FAULT opcode 5
+        async command CLEAR_MAG_FAULT opcode 6
+        async command CLEAR_IMU_FAULT opcode 7
 
         # events
         event HealthCheckComplete \

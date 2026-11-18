@@ -9,11 +9,10 @@ SystemManager::SystemManager(const char* const compName)
       m_uptimeSeconds(0),
       m_totalComponentFaults(0),
       m_degradedTicks(0),
-      m_sensorFaultActive(false),
+      m_imuFaultActive(false),
       m_tempFaultActive(false),
       m_gpsFaultActive(false),
       m_magFaultActive(false),
-      m_imuFaultActive(false),
       m_ledToggle(false) {}
 
 SystemManager::~SystemManager() {}
@@ -91,22 +90,22 @@ void SystemManager::Managers_SystemManagerStateMachine_action_performReboot(
 
 // only send faultCleared when ALL four sensors are back - one recovering doesn't mean we're ok
 void SystemManager::checkAllClear() {
-    if (!m_sensorFaultActive && !m_tempFaultActive &&
+    if (!m_imuFaultActive && !m_tempFaultActive &&
         !m_gpsFaultActive && !m_magFaultActive && !m_imuFaultActive) {
         this->systemMgrSm_sendSignal_faultCleared();
     }
 }
 
-void SystemManager::sensorHealth_handler(FwIndexType portNum, bool healthy) {
-    // !m_sensorFaultActive guard: IMUManager calls healthOut(false) every tick it's faulting
+void SystemManager::imuHealth_handler(FwIndexType portNum, bool healthy) {
+    // !m_imuFaultActive guard: IMUManager calls healthOut(false) every tick it's faulting
     // without this check we'd increment m_totalComponentFaults every second and spam the state machine
-    if (!healthy && !m_sensorFaultActive) {
-        m_sensorFaultActive = true;
+    if (!healthy && !m_imuFaultActive) {
+        m_imuFaultActive = true;
         m_totalComponentFaults++;
         this->log_WARNING_HI_EnteredDegraded(m_totalComponentFaults);
-        this->systemMgrSm_sendSignal_sensorFault();
-    } else if (healthy && m_sensorFaultActive) {
-        m_sensorFaultActive = false;
+        this->systemMgrSm_sendSignal_imuFault();
+    } else if (healthy && m_imuFaultActive) {
+        m_imuFaultActive = false;
         checkAllClear();  // check if everyone else is also healthy before returning to NOMINAL
     }
 }
@@ -147,19 +146,6 @@ void SystemManager::magHealth_handler(FwIndexType portNum, bool healthy) {
     }
 }
 
-void SystemManager::imuHealth_handler(FwIndexType portNum, bool healthy) {
-    // no dedicated imuFault signal in the state machine, so reuse sensorFault (also drives DEGRADED)
-    if (!healthy && !m_imuFaultActive) {
-        m_imuFaultActive = true;
-        m_totalComponentFaults++;
-        this->log_WARNING_HI_EnteredDegraded(m_totalComponentFaults);
-        this->systemMgrSm_sendSignal_sensorFault();
-    } else if (healthy && m_imuFaultActive) {
-        m_imuFaultActive = false;
-        checkAllClear();
-    }
-}
-
 // command handlers
 
 void SystemManager::REPORT_STATUS_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
@@ -175,7 +161,7 @@ void SystemManager::REPORT_STATUS_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
 void SystemManager::INJECT_COMPONENT_FAULT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
     m_totalComponentFaults++;
     this->log_WARNING_HI_ComponentFaultDetected(m_totalComponentFaults);
-    this->systemMgrSm_sendSignal_sensorFault();
+    this->systemMgrSm_sendSignal_imuFault();
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
 }
 
@@ -186,7 +172,7 @@ void SystemManager::ESCALATE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
 }
 
 void SystemManager::CLEAR_FAULT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
-    m_sensorFaultActive = false;
+    m_imuFaultActive = false;
     m_tempFaultActive = false;
     m_gpsFaultActive = false;
     m_magFaultActive = false;
@@ -197,8 +183,8 @@ void SystemManager::CLEAR_FAULT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
 }
 
-void SystemManager::CLEAR_SENSOR_FAULT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
-    m_sensorFaultActive = false;
+void SystemManager::CLEAR_IMU_FAULT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
+    m_imuFaultActive = false;
     checkAllClear();
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
 }
@@ -217,12 +203,6 @@ void SystemManager::CLEAR_GPS_FAULT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) 
 
 void SystemManager::CLEAR_MAG_FAULT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
     m_magFaultActive = false;
-    checkAllClear();
-    this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
-}
-
-void SystemManager::CLEAR_IMU_FAULT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
-    m_imuFaultActive = false;
     checkAllClear();
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
 }

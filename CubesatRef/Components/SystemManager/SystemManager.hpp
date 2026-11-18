@@ -31,7 +31,6 @@ class SystemManager final : public SystemManagerComponentBase {
 
     // port handlers
     void run_handler(FwIndexType portNum, U32 context) override;
-    void sensorHealth_handler(FwIndexType portNum, bool healthy) override;
     void tempHealth_handler(FwIndexType portNum, bool healthy) override;
     void gpsHealth_handler(FwIndexType portNum, bool healthy) override;
     void magHealth_handler(FwIndexType portNum, bool healthy) override;
@@ -42,7 +41,6 @@ class SystemManager final : public SystemManagerComponentBase {
     void INJECT_COMPONENT_FAULT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) override;
     void CLEAR_FAULT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) override;
     void ESCALATE_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) override;
-    void CLEAR_SENSOR_FAULT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) override;
     void CLEAR_TEMP_FAULT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) override;
     void CLEAR_GPS_FAULT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) override;
     void CLEAR_MAG_FAULT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) override;
@@ -56,7 +54,6 @@ class SystemManager final : public SystemManagerComponentBase {
     void checkAllClear();
 
     // per-sensor fault flags
-    bool m_sensorFaultActive = false;
     bool m_tempFaultActive = false;
     bool m_gpsFaultActive = false;
     bool m_magFaultActive = false;
