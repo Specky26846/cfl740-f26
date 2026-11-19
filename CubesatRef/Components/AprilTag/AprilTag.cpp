@@ -63,6 +63,10 @@ bool AprilTag::processImage(const char* imagePath) {
     if (csv.tellp() == 0) {
         csv << "frame,tag_id,tx,ty,tz,r11,r12,r13,r21,r22,r23,r31,r32,r33\n";
     }
+    
+    // Start with no valid pose
+    Types::TagPose poseData;
+    poseData.set_valid(false);
 
     for (int i = 0; i < zarray_size(detections); ++i) {
         apriltag_detection_t* detection;
@@ -71,6 +75,26 @@ bool AprilTag::processImage(const char* imagePath) {
         apriltag_detection_info_t info = {detection, TAG_SIZE_METERS, FX, FY, CX, CY};
         apriltag_pose_t pose;
         estimate_tag_pose(&info, &pose);
+
+        // Use the first detected tag for the beacon
+        if (i == 0) {
+            poseData.set_tagId(static_cast<U16>(detection->id));
+            poseData.set_valid(true);
+
+            poseData.set_tx(static_cast<F32>(MATD_EL(pose.t, 0, 0)));
+            poseData.set_ty(static_cast<F32>(MATD_EL(pose.t, 1, 0)));
+            poseData.set_tz(static_cast<F32>(MATD_EL(pose.t, 2, 0)));
+
+            poseData.set_r11(static_cast<F32>(MATD_EL(pose.R, 0, 0)));
+            poseData.set_r12(static_cast<F32>(MATD_EL(pose.R, 0, 1)));
+            poseData.set_r13(static_cast<F32>(MATD_EL(pose.R, 0, 2)));
+            poseData.set_r21(static_cast<F32>(MATD_EL(pose.R, 1, 0)));
+            poseData.set_r22(static_cast<F32>(MATD_EL(pose.R, 1, 1)));
+            poseData.set_r23(static_cast<F32>(MATD_EL(pose.R, 1, 2)));
+            poseData.set_r31(static_cast<F32>(MATD_EL(pose.R, 2, 0)));
+            poseData.set_r32(static_cast<F32>(MATD_EL(pose.R, 2, 1)));
+            poseData.set_r33(static_cast<F32>(MATD_EL(pose.R, 2, 2)));
+        }
 
         csv << m_frame << ',' << detection->id;
         for (int row = 0; row < 3; ++row) {
@@ -88,6 +112,13 @@ bool AprilTag::processImage(const char* imagePath) {
         matd_destroy(pose.t);
     }
 
+    
+    poseData.set_timestamp(this->getTime().getSeconds());
+
+    // Send the result through the pose output port
+    if (this->isConnected_poseOut_OutputPort(0)) {
+        this->poseOut_out(0, poseData);
+    }
     apriltag_detections_destroy(detections);
     csv.close();
     if (!csv) {

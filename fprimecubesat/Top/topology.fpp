@@ -84,6 +84,9 @@ module fprimecubesat {
     connections Images {
       # Send the saved image path from Camera to AprilTag
       camera.imageCaptured -> aprilTag.processImage
+
+      # Send  latest pose to PacketBuilder
+      aprilTag.poseOut -> packetBuilder.poseIn
     }
 
     connections fprimecubesat {

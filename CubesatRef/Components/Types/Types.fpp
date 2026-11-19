@@ -38,6 +38,32 @@ module Types {
         numSatellites: U8
     }
 
+    @ Latest pose from one AprilTag
+    struct TagPose {
+        tagId: U16
+
+        @ Time the pose was calculated in seconds
+        timestamp: U32
+
+        @ Whether the latest image produced a pose
+        valid: bool
+
+        @ Position in meters
+        tx: F32
+        ty: F32
+        tz: F32
+
+        @ Rotation matrix
+        r11: F32
+        r12: F32
+        r13: F32
+        r21: F32
+        r22: F32
+        r23: F32
+        r31: F32
+        r32: F32
+        r33: F32
+    }
 
 }
 
@@ -58,5 +84,8 @@ module Managers {
 
     @ Path to a completed image that is ready to read
     port ImageFile(imagePath: string size 512)
+
+    @ Send a pose estimate to PacketBuilder
+    port PoseSample(data: Types.TagPose)
 
 }

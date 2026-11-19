@@ -45,6 +45,7 @@ class PacketBuilder final : public PacketBuilderComponentBase {
     void tempIn_handler(FwIndexType portNum, F32 temperature) override;
     void pduIn_handler(FwIndexType portNum, const Types::PowerData& data) override;
     void gpsIn_handler(FwIndexType portNum, const Types::GpsData& data) override;
+    void poseIn_handler(FwIndexType portNum, const Types::TagPose& data) override;
 
     // serialize the beacon fields in the same order as BEACON_DEFINITION in the encode.py
     void serializeBeacon(Fw::ComBuffer& beacon, std::ostream& csv);
@@ -61,6 +62,7 @@ class PacketBuilder final : public PacketBuilderComponentBase {
     F32 m_temp = 0.0f;
     Types::PowerData m_power;
     Types::GpsData m_gps;
+    Types::TagPose m_pose;
 
     U32 m_beaconCount = 0;
 

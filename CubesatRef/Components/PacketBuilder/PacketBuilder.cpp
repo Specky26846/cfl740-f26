@@ -21,6 +21,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <limits>
+#include <iomanip>
 
 namespace CubesatRef {
 
@@ -41,7 +42,12 @@ static const char* const CSV_HEADER =
     "used_memory,free_memory,used_disk,free_disk,cpu_load,cpu_temp,"
     "batt_v,batt_i,v_3v3,i_3v3,v_5v0,i_5v0,v_vbatt,i_vbatt,temp_3v3_reg,temp_5v0_reg,"
     "latitude,longitude,altitude,ground_speed,num_satellites,"
-    "rm3100_x,rm3100_y,rm3100_z";
+    "rm3100_x,rm3100_y,rm3100_z,"
+    "pose_tag_id,pose_timestamp,pose_valid,"
+    "pose_tx,pose_ty,pose_tz,"
+    "pose_r11,pose_r12,pose_r13,"
+    "pose_r21,pose_r22,pose_r23,"
+    "pose_r31,pose_r32,pose_r33";
 
 // same as python's struct.pack(fmt, int(value)): truncate toward zero, little-endian,
 // and if the value doesn't fit (or isn't a number) python's except branch writes zeros
@@ -80,7 +86,9 @@ static F64 regTempToCounts(F64 tempC) {
 // Component construction and destruction
 // ----------------------------------------------------------------------
 
-PacketBuilder ::PacketBuilder(const char* const compName) : PacketBuilderComponentBase(compName) {}
+PacketBuilder ::PacketBuilder(const char* const compName): PacketBuilderComponentBase(compName) {
+    m_pose.set_valid(false);
+}
 
 PacketBuilder ::~PacketBuilder() {}
 
@@ -107,6 +115,10 @@ void PacketBuilder ::pduIn_handler(FwIndexType portNum, const Types::PowerData& 
 
 void PacketBuilder ::gpsIn_handler(FwIndexType portNum, const Types::GpsData& data) {
     m_gps = data;
+}
+
+void PacketBuilder ::poseIn_handler(FwIndexType portNum, const Types::TagPose& data) {
+    m_pose = data;
 }
 
 void PacketBuilder ::run_handler(FwIndexType portNum, U32 context) {
@@ -204,6 +216,28 @@ void PacketBuilder ::serializeBeacon(Fw::ComBuffer& beacon, std::ostream& csv) {
     packField<I32>(beacon, csv, m_mag.get_x() * RM3100_COUNTS_PER_UT);
     packField<I32>(beacon, csv, m_mag.get_y() * RM3100_COUNTS_PER_UT);
     packField<I32>(beacon, csv, m_mag.get_z() * RM3100_COUNTS_PER_UT);
+    
+    // Add the latest pose to the beacon
+    packField<U16>(beacon, csv, m_pose.get_tagId());
+    packField<U32>(beacon, csv, m_pose.get_timestamp());
+    packField<U8>(beacon, csv, m_pose.get_valid() ? 1 : 0);
+
+    const F32 poseValues[] = {
+        m_pose.get_tx(), m_pose.get_ty(), m_pose.get_tz(),
+        m_pose.get_r11(), m_pose.get_r12(), m_pose.get_r13(),
+        m_pose.get_r21(), m_pose.get_r22(), m_pose.get_r23(),
+        m_pose.get_r31(), m_pose.get_r32(), m_pose.get_r33()
+    };
+
+    // Keep decimal values in the packet and CSV
+    csv << std::setprecision(std::numeric_limits<F32>::max_digits10);
+
+    for (F32 value : poseValues) {
+        const Fw::SerializeStatus status =
+            beacon.serializeFrom(value, Fw::Endianness::LITTLE);
+        FW_ASSERT(status == Fw::FW_SERIALIZE_OK, status);
+        csv << value << ',';
+    }
 }
 
 void PacketBuilder::storeData(const std::string& line) {

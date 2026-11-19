@@ -35,5 +35,8 @@ module CubesatRef {
         @ Output port to send the RAP packet to the radio
         output port rapOut: Fw.Com
 
+        @ Receive the latest AprilTag pose
+        async input port poseIn: Managers.PoseSample drop
+
     }
 }
