@@ -15,7 +15,7 @@ class TempManager final : public TempManagerComponentBase {
   private:
     U32 m_simTick = 0;
     U32 m_readCount = 0;
-    static constexpr U32 READ_LOG_INTERVAL = 5;
+    static constexpr U32 READ_LOG_INTERVAL = 10;  // 1 Hz -> every 10 s
 
     // state machine action handlers
     void Managers_TempManagerStateMachine_action_doInit(

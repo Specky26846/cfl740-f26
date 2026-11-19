@@ -197,7 +197,10 @@ Drv::I2cStatus MagnetometerManager::readMagData(F32& mx, F32& my, F32& mz) {
         my = static_cast<F32>(rawMy) / RM3100_SENSITIVITY;
         mz = static_cast<F32>(rawMz) / RM3100_SENSITIVITY;
 
-        log_ACTIVITY_LO_MagReading(mx, my, mz);
+        // throttle the event log - event bandwidth over the radio is limited
+        if (++m_readCount % READ_LOG_INTERVAL == 0) {
+            log_ACTIVITY_LO_MagReading(mx, my, mz);
+        }
     }
 
     return status;

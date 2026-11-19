@@ -29,7 +29,7 @@ class PduManager final : public PduManagerComponentBase {
 
     U32 m_simTick = 0;
     U32 m_readCount = 0;
-    static constexpr U32 READ_LOG_INTERVAL = 5;
+    static constexpr U32 READ_LOG_INTERVAL = 25;  // 2.5 Hz -> every 10 s
 
     // state machine action handlers
     void Managers_PduManagerStateMachine_action_doInit(

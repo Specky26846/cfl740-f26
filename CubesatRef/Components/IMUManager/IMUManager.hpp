@@ -26,6 +26,11 @@ class IMUManager final : public IMUManagerComponentBase {
 
     U32 m_simTick = 0;
 
+    // reading event is logged once every READ_LOG_INTERVAL reads (1 Hz -> every 10 s);
+    // telemetry still updates on every read
+    U32 m_readCount = 0;
+    static constexpr U32 READ_LOG_INTERVAL = 10;
+
     // state machine action handlers
     void Managers_IMUManagerStateMachine_action_doInit(
         SmId smId, Managers_IMUManagerStateMachine::Signal signal) override;

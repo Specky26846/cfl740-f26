@@ -199,7 +199,10 @@ Drv::I2cStatus IMUManager::readImuData(F32& ax, F32& ay, F32& az,
         gz = static_cast<F32>(rawGz) / 65.5f;
         temp = static_cast<F32>(rawTemp) / 333.87f + 21.0f;  // icm-20649 datasheet: (TEMP_OUT - RoomTemp_Offset)/333.87 + 21, offset 0
     
-        log_ACTIVITY_LO_ImuReading(ax, ay, az, gx, gy, gz, temp);
+        // throttle the event log - event bandwidth over the radio is limited
+        if (++m_readCount % READ_LOG_INTERVAL == 0) {
+            log_ACTIVITY_LO_ImuReading(ax, ay, az, gx, gy, gz, temp);
+        }
     }
 
     return status;

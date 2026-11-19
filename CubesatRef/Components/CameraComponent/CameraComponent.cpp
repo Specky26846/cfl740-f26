@@ -110,10 +110,9 @@ void CameraComponent::TAKE_PHOTO_cmdHandler(
     }
 
     // STEP 2: Configure CamArray using I2C
+    // no sudo: the FSW user needs to be in the i2c group for /dev/i2c-10 access
 
     char* i2cArgs[] = {
-        const_cast<char*>("sudo"),
-        const_cast<char*>("-n"),
         const_cast<char*>("i2cset"),
         const_cast<char*>("-y"),
         const_cast<char*>("10"),
