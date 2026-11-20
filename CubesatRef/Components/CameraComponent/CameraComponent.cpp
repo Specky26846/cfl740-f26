@@ -21,9 +21,11 @@ namespace Managers {
 
 // ----------------------------------------------------------------------
 // Helper: execute a command and wait for completion
+// returns the exit status (0 = success), 127 if the program couldn't be
+// run, 128+N if killed by signal N, or -1 if fork/waitpid failed
 // ----------------------------------------------------------------------
 
-static bool runCommand(char* const args[]) {
+static I32 runCommand(char* const args[]) {
 
     pid_t pid = fork();
 
@@ -33,7 +35,7 @@ static bool runCommand(char* const args[]) {
     }
 
     if (pid < 0) {
-        return false;
+        return -1;
     }
 
     int status = 0;
@@ -43,11 +45,16 @@ static bool runCommand(char* const args[]) {
         result = waitpid(pid, &status, 0);
     } while (result < 0 && errno == EINTR);
 
-    return (
-        result == pid &&
-        WIFEXITED(status) &&
-        WEXITSTATUS(status) == 0
-    );
+    if (result != pid) {
+        return -1;
+    }
+    if (WIFEXITED(status)) {
+        return WEXITSTATUS(status);
+    }
+    if (WIFSIGNALED(status)) {
+        return 128 + WTERMSIG(status);
+    }
+    return -1;
 }
 
 // ----------------------------------------------------------------------
@@ -122,7 +129,9 @@ void CameraComponent::TAKE_PHOTO_cmdHandler(
         nullptr
     };
 
-    if (!runCommand(i2cArgs)) {
+    const I32 i2cStatus = runCommand(i2cArgs);
+    if (i2cStatus != 0) {
+        this->log_WARNING_HI_CameraStepFailed(Fw::LogStringArg("i2cset camera select"), i2cStatus);
         this->cmdResponse_out(
             opCode, cmdSeq, Fw::CmdResponse::EXECUTION_ERROR
         );
@@ -135,6 +144,7 @@ void CameraComponent::TAKE_PHOTO_cmdHandler(
     std::tm* timeInfo = std::localtime(&currentTime);
 
     if (timeInfo == nullptr) {
+        this->log_WARNING_HI_CameraStepFailed(Fw::LogStringArg("localtime"), -1);
         this->cmdResponse_out(
             opCode, cmdSeq, Fw::CmdResponse::EXECUTION_ERROR
         );
@@ -186,7 +196,8 @@ void CameraComponent::TAKE_PHOTO_cmdHandler(
         nullptr
     };
 
-    if (runCommand(cameraArgs)) {
+    const I32 captureStatus = runCommand(cameraArgs);
+    if (captureStatus == 0) {
 
         // Capture successful
         this->tlmWrite_PhotoCount(++this->m_photoCount);
@@ -203,6 +214,7 @@ void CameraComponent::TAKE_PHOTO_cmdHandler(
 
     } else {
 
+        this->log_WARNING_HI_CameraStepFailed(Fw::LogStringArg("rpicam-still capture"), captureStatus);
         this->cmdResponse_out(
             opCode, cmdSeq, Fw::CmdResponse::EXECUTION_ERROR
         );

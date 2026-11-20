@@ -14,6 +14,13 @@ module Managers {
             filePath: string size 256 @< Image output path
         ) severity activity high format "Photo captured using camera {}: {}"
 
+        @ A TAKE_PHOTO step failed. exitCode is the program's exit status:
+        @ 127 = program not found, 128+N = killed by signal N, -1 = fork failed
+        event CameraStepFailed(
+            step: string size 40 @< Which step failed
+            exitCode: I32 @< Exit status of the external program
+        ) severity warning high format "TAKE_PHOTO failed at {} (exit code {})"
+
         @ A count of the number of photos successfully taken
         telemetry PhotoCount: U32
 
