@@ -3,19 +3,21 @@
 #include "tag36h11.h"
 #include <Fw/Logger/Logger.hpp>
 #include <opencv2/imgcodecs.hpp>
+#include <opencv2/calib3d.hpp>
 #include <fstream>
 #include <iomanip>
 
 namespace Vision {
 
 namespace {
-// Settings for the 320x240 test images, UPDATE FOR FLIGHT CAMERA
 constexpr char CSV_PATH[] = "poses.csv";
-constexpr F64 FX = 288.0;
-constexpr F64 FY = 288.0;
-constexpr F64 CX = 160.0;
-constexpr F64 CY = 120.0;
-constexpr F64 TAG_SIZE_METERS = 0.096;
+
+// Camera 0, single-camera mode, calibrated at 640x480
+constexpr F64 FX = 983.0738549582002;
+constexpr F64 FY = 958.3931773136603;
+constexpr F64 CX = 130.5908795240388;
+constexpr F64 CY = 100.27366846146512;
+constexpr F64 TAG_SIZE_METERS = 0.065;
 }
 
 AprilTag::AprilTag(const char* name) : AprilTagComponentBase(name) {
@@ -49,13 +51,32 @@ bool AprilTag::processImage(const char* imagePath) {
         return false;
     }
 
+    // Camera parameters measured during calibration
+    static const cv::Mat K = (cv::Mat_<double>(3, 3) <<
+        FX, 0.0, CX,
+        0.0, FY, CY,
+        0.0, 0.0, 1.0);
+
+    // Lens distortion coefficients in k1, k2, p1, p2, k3 order
+    static const cv::Mat D = (cv::Mat_<double>(1, 5) <<
+        -0.4225254762255126,
+         0.40528981951368803,
+         0.01736466886094117,
+        -0.02578802961941483,
+         1.7693540422569356);
+
+    // Remove lens distortion before detecting tags
+    cv::Mat corrected;
+    cv::undistort(gray, corrected, K, D, K);
+    gray = corrected;
+
     std::ofstream csv(CSV_PATH, std::ios::app);
     if (!csv) {
         Fw::Logger::log("AprilTag: cannot open %s\n", CSV_PATH);
         return false;
     }
 
-    // AprilTag reads the OpenCV grayscale buffer directly.
+    // AprilTag reads the OpenCV grayscale buffer directly
     image_u8_t image = {gray.cols, gray.rows, static_cast<int>(gray.step), gray.data};
     zarray_t* detections = apriltag_detector_detect(m_detector, &image);
 
