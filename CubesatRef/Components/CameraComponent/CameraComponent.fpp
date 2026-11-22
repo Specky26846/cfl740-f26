@@ -2,6 +2,11 @@ module Managers {
     @ Camera Module Component
     active component CameraComponent {
 
+        state machine instance camSm: CameraComponentStateMachine
+
+        @ Rate group tick, drives the state machine
+        async input port run: Svc.Sched
+
         @ Command to take a photo using a specified camera and file path
         async command TAKE_PHOTO(
             cameraId: U32 @< Camera index

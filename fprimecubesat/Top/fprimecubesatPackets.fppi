@@ -100,6 +100,10 @@ telemetry packets fprimecubesatPackets {
   }
 
 } omit {
+  # camera rate group (1/60 Hz) - not downlinked
+  rateGroup4.RgCycleSlips
+  rateGroup4.RgMaxTime
+
   # tutorial LEDs
   led.BlinkCommandCount
   led.BlinkingState

@@ -16,6 +16,7 @@
 
 register_fprime_library(
     AUTOCODER_INPUTS
+        "${CMAKE_CURRENT_LIST_DIR}/CameraComponentStateMachine.fpp"
         "${CMAKE_CURRENT_LIST_DIR}/CameraComponent.fpp"
     SOURCES
         "${CMAKE_CURRENT_LIST_DIR}/CameraComponent.cpp"

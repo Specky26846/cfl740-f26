@@ -55,6 +55,11 @@ module fprimecubesat {
     stack size Default.STACK_SIZE \
     priority 118
 
+  instance rateGroup4: Svc.ActiveRateGroup base id 0x10007000 \
+    queue size Default.QUEUE_SIZE \
+    stack size Default.STACK_SIZE \
+    priority 116
+
   instance cmdSeq: Svc.CmdSequencer base id 0x10004000 \
     queue size Default.QUEUE_SIZE \
     stack size Default.STACK_SIZE \

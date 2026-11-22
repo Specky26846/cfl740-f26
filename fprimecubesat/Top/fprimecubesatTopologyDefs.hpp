@@ -48,6 +48,7 @@ namespace PingEntries {
     namespace fprimecubesat_rateGroup1 {enum { WARN = 3, FATAL = 5 };}
     namespace fprimecubesat_rateGroup2 {enum { WARN = 3, FATAL = 5 };}
     namespace fprimecubesat_rateGroup3 {enum { WARN = 3, FATAL = 5 };}
+    namespace fprimecubesat_rateGroup4 {enum { WARN = 3, FATAL = 5 };}
     namespace fprimecubesat_cmdSeq {enum { WARN = 3, FATAL = 5 };}
     namespace fprimecubesat_radioManager {enum { WARN = 3, FATAL = 5 };}
 }  // namespace PingEntries

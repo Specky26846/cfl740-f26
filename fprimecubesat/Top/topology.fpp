@@ -8,6 +8,7 @@ module fprimecubesat {
     rateGroup1
     rateGroup2
     rateGroup3
+    rateGroup4
   }
 
   deployment topology fprimecubesat {
@@ -32,6 +33,7 @@ module fprimecubesat {
     instance rateGroup1
     instance rateGroup2
     instance rateGroup3
+    instance rateGroup4
     instance rateGroupDriver
     instance systemResources
     instance timer
@@ -161,6 +163,11 @@ module fprimecubesat {
       rateGroup3.RateGroupMemberOut[4] -> DataProducts.dpMgr.schedIn
       rateGroup3.RateGroupMemberOut[5] -> pduManager.run
       rateGroup3.RateGroupMemberOut[6] -> ComCcsds.aggregator.timeout
+
+      # Rate group 4 (1/60 Hz - camera)
+      rateGroupDriver.CycleOut[Ports_RateGroups.rateGroup4] -> rateGroup4.CycleIn
+      rateGroup4.RateGroupMemberOut[0] -> camera.run
+
     }
 
     connections CdhCore_cmdSeq {

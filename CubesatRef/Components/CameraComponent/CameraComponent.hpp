@@ -39,6 +39,16 @@ class CameraComponent final : public CameraComponentComponentBase {
 
   private:
     U32 m_photoCount = 0;
+
+    // state machine action handlers
+    void Managers_CameraComponentStateMachine_action_takePhoto(
+      SmId smId, Managers_CameraComponentStateMachine::Signal signal) override;
+
+    void Managers_CameraComponentStateMachine_action_doFaultRecovery(
+      SmId smId, Managers_CameraComponentStateMachine::Signal signal) override;
+
+    void run_handler(FwIndexType portNum, U32 context) override;
+  
 };
 
 }  // namespace Managers
