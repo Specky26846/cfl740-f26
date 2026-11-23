@@ -3,7 +3,7 @@
 #include "tag36h11.h"
 #include <Fw/Logger/Logger.hpp>
 #include <opencv2/imgcodecs.hpp>
-#include <opencv2/calib3d.hpp>
+#include <opencv2/imgproc.hpp>
 #include <fstream>
 #include <iomanip>
 
@@ -51,23 +51,38 @@ bool AprilTag::processImage(const char* imagePath) {
         return false;
     }
 
-    // Camera parameters measured during calibration
-    static const cv::Mat K = (cv::Mat_<double>(3, 3) <<
-        FX, 0.0, CX,
-        0.0, FY, CY,
-        0.0, 0.0, 1.0);
-
     // Lens distortion coefficients in k1, k2, p1, p2, k3 order
-    static const cv::Mat D = (cv::Mat_<double>(1, 5) <<
-        -0.4225254762255126,
-         0.40528981951368803,
-         0.01736466886094117,
-        -0.02578802961941483,
-         1.7693540422569356);
+    constexpr F64 K1 = -0.4225254762255126;
+    constexpr F64 K2 = 0.40528981951368803;
+    constexpr F64 P1 = 0.01736466886094117;
+    constexpr F64 P2 = -0.02578802961941483;
+    constexpr F64 K3 = 1.7693540422569356;
 
-    // Remove lens distortion before detecting tags
+    // Remove lens distortion before detecting tags. Equivalent to
+    // cv::undistort(gray, out, K, D, K), but built from imgproc only because
+    // the RPi sysroot's OpenCV has no calib3d module. The map is rebuilt
+    // only when the image size changes.
+    static cv::Mat mapX, mapY;
+    if (mapX.size() != gray.size()) {
+        mapX.create(gray.size(), CV_32FC1);
+        mapY.create(gray.size(), CV_32FC1);
+        for (int v = 0; v < gray.rows; ++v) {
+            float* mx = mapX.ptr<float>(v);
+            float* my = mapY.ptr<float>(v);
+            const F64 y = (v - CY) / FY;
+            for (int u = 0; u < gray.cols; ++u) {
+                const F64 x = (u - CX) / FX;
+                const F64 r2 = x * x + y * y;
+                const F64 radial = 1.0 + r2 * (K1 + r2 * (K2 + r2 * K3));
+                const F64 xd = x * radial + 2.0 * P1 * x * y + P2 * (r2 + 2.0 * x * x);
+                const F64 yd = y * radial + P1 * (r2 + 2.0 * y * y) + 2.0 * P2 * x * y;
+                mx[u] = static_cast<float>(FX * xd + CX);
+                my[u] = static_cast<float>(FY * yd + CY);
+            }
+        }
+    }
     cv::Mat corrected;
-    cv::undistort(gray, corrected, K, D, K);
+    cv::remap(gray, corrected, mapX, mapY, cv::INTER_LINEAR, cv::BORDER_CONSTANT);
     gray = corrected;
 
     std::ofstream csv(CSV_PATH, std::ios::app);

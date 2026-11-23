@@ -15,7 +15,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/lib/fprime/cmake/FPrime.cmake")
 fprime_setup_included_code()
 
 # Find the OpenCV libraries
-find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs calib3d)
+find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs)
 
 # Build the AprilTag library
 function(add_apriltag_library)
