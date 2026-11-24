@@ -13,10 +13,12 @@ module Managers {
         signal escalate       # been in DEGRADED too long - promote to REBOOT
         signal rebootComplete # GDS cleared the fault, return to NOMINAL
         signal landed         # landed, so don't escalate to REBOOT
+        signal liftoff        # lifted off
 
         action runHealthCheck  # NOMINAL tick: emit telemetry, keep status led solid on
         action monitorDegraded # DEGRADED tick: emit telemetry, blink led, escalate if it's been too long
         action performReboot   # REBOOT tick: emit telemetry, turn led off
+        action runLanded       # LANDED tick: emit telemetry, keep status led solid on
 
         state NOMINAL {
             on tick do { runHealthCheck }   # everything fine, just report and keep the led on
@@ -28,9 +30,9 @@ module Managers {
         }
 
         state DEGRADED {
-            on tick do { monitorDegraded }  # blink the led each tick, escalate after ESCALATION_THRESHOLD ticks
+            on tick do { monitorDegraded }  # blink the led each tick
             on faultCleared enter NOMINAL   # all sensors healthy again
-            on escalate enter REBOOT        # fault stuck around too long, time to reboot
+            on escalate enter REBOOT        # fault stuck around after ESCALATION_THRESHOLD ticks, time to reboot
             on landed enter LANDED          # landed
         }
 
@@ -40,11 +42,9 @@ module Managers {
         }
 
         state LANDED {
-            on tick do { runHealthCheck }   # everything fine, just report and keep the led on
-            on imuFault enter DEGRADED   # imu went down
-            on tempFault enter DEGRADED     # temp sensor went down
-            on gpsFault enter DEGRADED      # gps went down
-            on magFault enter DEGRADED      # magnetometer went down
+            on tick do { runLanded }        # on the ground, report and keep the led on
+            on gpsFault enter DEGRADED      # only data from gps emitted after landing
+            on liftoff enter NOMINAL        # lifted off, back to normal operation
         }
 
     }

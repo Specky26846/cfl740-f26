@@ -203,6 +203,9 @@ module fprimecubesat {
       navigationManager.healthOut -> systemManager.gpsHealth
       magnetometerManager.healthOut -> systemManager.magHealth
 
+      # IMU readings to SystemManager for landing detection
+      imuManager.motionOut -> systemManager.imuData
+
     }
 
     connections fprimecubesat {

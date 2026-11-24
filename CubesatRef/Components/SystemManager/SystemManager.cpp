@@ -1,6 +1,8 @@
 // SystemManager.cpp
 
 #include "CubesatRef/Components/SystemManager/SystemManager.hpp"
+#include <cmath>
+#include <cstdlib>
 
 namespace Managers {
 
@@ -13,7 +15,8 @@ SystemManager::SystemManager(const char* const compName)
       m_tempFaultActive(false),
       m_gpsFaultActive(false),
       m_magFaultActive(false),
-      m_ledToggle(false) {}
+      m_ledToggle(false),
+      m_rebootIssued(false) {}
 
 SystemManager::~SystemManager() {}
 
@@ -32,7 +35,7 @@ void SystemManager::Managers_SystemManagerStateMachine_action_runHealthCheck(
 {
     FW_ASSERT(smId == SmId::systemMgrSm);
     m_degradedTicks = 0;
-    this->tlmWrite_SystemState(0);
+    this->tlmWrite_SystemState(0); // switch to NOMINAL state
     this->tlmWrite_SystemUptime(m_uptimeSeconds);
     this->tlmWrite_CpuUsage(0.0f);
     this->tlmWrite_MemUsage(0.0f);
@@ -42,6 +45,25 @@ void SystemManager::Managers_SystemManagerStateMachine_action_runHealthCheck(
     if (this->isConnected_statusLedSet_OutputPort(0)) {
         this->statusLedSet_out(0, Fw::Logic::HIGH);
     }
+
+    if (m_imuFresh) {
+        m_imuFresh = false;
+        if (!m_flightArmed) {
+            if (!m_imuStill && ++m_moveTicks >= MOVE_TICKS_REQUIRED) {
+                m_flightArmed = true;          // proven we're flying
+                m_stillTicks = 0;
+            }
+        } else {
+            m_stillTicks = m_imuStill ? m_stillTicks + 1 : 0;
+            if (m_stillTicks >= STILL_TICKS_REQUIRED) {
+                m_landed = true;
+                m_moveTicks = 0;
+                this->log_ACTIVITY_HI_LandingDetected(m_uptimeSeconds);
+                this->systemMgrSm_sendSignal_landed();
+            }
+        }
+    }
+    if (m_landed) { this->systemMgrSm_sendSignal_landed(); }  // existing: return to LANDED after a fault
 }
 
 // called every tick while in DEGRADED - blinks the led and escalates if fault persists too long
@@ -51,7 +73,7 @@ void SystemManager::Managers_SystemManagerStateMachine_action_monitorDegraded(
 {
     FW_ASSERT(smId == SmId::systemMgrSm);
     m_degradedTicks++;
-    this->tlmWrite_SystemState(1);
+    this->tlmWrite_SystemState(1); // switch to DEGRADED state
     this->tlmWrite_SystemUptime(m_uptimeSeconds);
     this->tlmWrite_TotalComponentFaults(m_totalComponentFaults);
     this->tlmWrite_DegradedTicks(m_degradedTicks);
@@ -69,18 +91,83 @@ void SystemManager::Managers_SystemManagerStateMachine_action_monitorDegraded(
     }
 }
 
-// system is in reboot, turn the led off and keep pushing telemetry
+// WATCHDOG: if we get here, the system has been in DEGRADED for too long and we need to reboot
 void SystemManager::Managers_SystemManagerStateMachine_action_performReboot(
     SmId smId,
     Managers_SystemManagerStateMachine::Signal signal)
 {
     FW_ASSERT(smId == SmId::systemMgrSm);
-    this->tlmWrite_SystemState(2);
+    this->tlmWrite_SystemState(2); // switch to REBOOT state
+    if (m_rebootIssued) {
+        return;  // already requested, wait for the OS to go down
+    }
+    m_rebootIssued = true;
+    this->log_WARNING_HI_SystemRebooting();  
+    int rc = std::system("sudo /sbin/reboot");
+    if (rc != 0) {
+        this->log_ACTIVITY_HI_RebootFailed();
+    }
+}
+
+// on the ground, emit telemetry and keep the status led solid on
+void SystemManager::Managers_SystemManagerStateMachine_action_runLanded(
+    SmId smId,
+    Managers_SystemManagerStateMachine::Signal signal)
+{
+    FW_ASSERT(smId == SmId::systemMgrSm);
+    m_degradedTicks = 0;
+    this->tlmWrite_SystemState(3); // switch to LANDED state
     this->tlmWrite_SystemUptime(m_uptimeSeconds);
     this->tlmWrite_TotalComponentFaults(m_totalComponentFaults);
+    this->tlmWrite_DegradedTicks(0);
     if (this->isConnected_statusLedSet_OutputPort(0)) {
-        this->statusLedSet_out(0, Fw::Logic::LOW);
+        this->statusLedSet_out(0, Fw::Logic::HIGH);
     }
+    if (m_imuFresh) {
+        m_imuFresh = false;  // we've used this reading, wait for the next one
+
+        if (m_flightArmed && !m_inFlight) { // armed, but not flying yet: look for 30 moving samples in a row
+            if (m_imuStill) {
+                m_moveTicks = 0;  // a still sample breaks the streak
+            } else {
+                m_moveTicks = m_moveTicks + 1;
+            }
+
+            if (m_moveTicks >= MOVE_TICKS_REQUIRED) {
+                m_inFlight = true;  // proven we're flying
+                this->systemMgrSm_sendSignal_liftoff();
+                m_moveTicks = 0;
+                m_stillTicks = 0;
+            }
+
+        } else if (m_inFlight) { // flying: look for 30 still samples in a row
+            if (m_imuStill) {
+                m_stillTicks = m_stillTicks + 1;
+            } else {
+                m_stillTicks = 0;  // a moving sample breaks the streak
+            }
+
+            if (m_stillTicks >= STILL_TICKS_REQUIRED) {
+                m_landed = true;
+                m_moveTicks = 0;
+                this->log_ACTIVITY_HI_LandingDetected(m_uptimeSeconds);
+                this->systemMgrSm_sendSignal_landed();
+            }
+        }
+    }
+}
+
+// landing detection
+// after consecutive moving reads for 30 seconds, then check for 30 consecutive still readings to declare landed
+// still means total accel ~1g (just gravity) and almost no rotation
+void SystemManager::imuData_handler(FwIndexType portNum, const Types::ImuData& data) {
+    const Types::GeometricVector3& a = data.get_accel();
+    const Types::GeometricVector3& w = data.get_gyro();
+    const F32 accelMag = std::sqrt(a.get_x() * a.get_x() + a.get_y() * a.get_y() + a.get_z() * a.get_z());
+    const F32 gyroMag = std::sqrt(w.get_x() * w.get_x() + w.get_y() * w.get_y() + w.get_z() * w.get_z());
+
+    m_imuStill = (std::fabs(accelMag - 1.0f) < STILL_ACCEL_TOL_G) && (gyroMag < STILL_GYRO_TOL_DPS);
+    m_imuFresh = true;   // a new reading arrived since the last tick
 }
 
 // health port handlers
@@ -204,6 +291,25 @@ void SystemManager::CLEAR_GPS_FAULT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) 
 void SystemManager::CLEAR_MAG_FAULT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
     m_magFaultActive = false;
     checkAllClear();
+    this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
+}
+
+void SystemManager::ARM_FLIGHT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
+    if (!m_flightArmed) {  // a repeat command must not restart detection mid-flight
+        m_flightArmed = true;
+        m_inFlight = false; // redeclare in case we were already flying and landed
+        m_stillTicks = 0;
+    }
+    this->log_ACTIVITY_HI_FlightArmed();
+    this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
+}
+
+void SystemManager::DISARM_FLIGHT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
+    m_flightArmed = false;
+    m_inFlight = false;
+    m_moveTicks = 0;
+    m_stillTicks = 0;
+    this->log_ACTIVITY_HI_FlightDisarmed();
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
 }
 

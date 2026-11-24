@@ -54,6 +54,9 @@ module Managers {
         # latest reading to the packet builder
         output port dataOut: Managers.ImuSample
 
+        # same reading to the system manager for landing detection
+        output port motionOut: Managers.ImuSample
+
 
         # i2c ports for icm-20649
         output port busWriteRead: Drv.I2cWriteRead

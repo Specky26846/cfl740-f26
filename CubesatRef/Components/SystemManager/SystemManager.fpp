@@ -15,6 +15,9 @@ module Managers {
         async input port magHealth: Managers.ComponentHealth
         async input port imuHealth: Managers.ComponentHealth
 
+        # imu readings for landing detection
+        async input port imuData: Managers.ImuSample
+
         # gpio for status led
         output port statusLedSet: Drv.GpioWrite
 
@@ -27,6 +30,8 @@ module Managers {
         async command CLEAR_GPS_FAULT opcode 5
         async command CLEAR_MAG_FAULT opcode 6
         async command CLEAR_IMU_FAULT opcode 7
+        async command ARM_FLIGHT opcode 8
+        async command DISARM_FLIGHT opcode 9
 
         # events
         event HealthCheckComplete \
@@ -47,11 +52,37 @@ module Managers {
         ) severity warning high \
           format "Component fault detected - entering REBOOT mode (total faults: {})"
 
+        event LandingDetected(
+            uptimeSeconds: U64
+        ) severity activity high \
+          format "IMU stationary - landing detected at uptime {} s"
+
+        event LandingCancelled(
+            uptimeSeconds: U64
+        ) severity activity high \
+          format "IMU moving - landing cancelled at uptime {} s"
+
         event RebootComplete \
             severity activity high \
             format "Reboot complete: returned to NOMINAL"
 
-        # telemetry - 0=nominal, 1=degraded, 2=reboot
+        event SystemRebooting \
+            severity warning high \
+            format "System rebooting"
+
+        event RebootFailed \
+            severity activity high \
+            format "Reboot failed: system remains in degraded state"
+
+        event FlightArmed \
+            severity activity high \
+            format "Flight armed"
+
+        event FlightDisarmed \
+            severity activity high \
+            format "Flight disarmed"
+
+        # telemetry SystemState: 0=nominal, 1=degraded, 2=reboot, 3=landed
         telemetry SystemState: U32
         telemetry CpuUsage: F32
         telemetry MemUsage: F32

@@ -69,6 +69,10 @@ void IMUManager::Managers_IMUManagerStateMachine_action_doRead(
             this->dataOut_out(0, Types::ImuData(Types::GeometricVector3(ax, ay, az),
                                                 Types::GeometricVector3(gx, gy, gz), temp));
         }
+        if (this->isConnected_motionOut_OutputPort(0)) {
+            this->motionOut_out(0, Types::ImuData(Types::GeometricVector3(ax, ay, az),
+                                                  Types::GeometricVector3(gx, gy, gz), temp));
+        }
 
     } else {
         this->log_ACTIVITY_HI_StateChange(IMUManager_SensorState::FAULT);
@@ -123,6 +127,10 @@ void IMUManager::Managers_IMUManagerStateMachine_action_doSimRead(
     if (this->isConnected_dataOut_OutputPort(0)) {
         this->dataOut_out(0, Types::ImuData(Types::GeometricVector3(ax, ay, az),
                                             Types::GeometricVector3(gx, gy, gz), temp));
+    }
+    if (this->isConnected_motionOut_OutputPort(0)) {
+        this->motionOut_out(0, Types::ImuData(Types::GeometricVector3(ax, ay, az),
+                                              Types::GeometricVector3(gx, gy, gz), temp));
     }
 
 }
