@@ -22,6 +22,10 @@ Fw::MallocAllocator mallocator;
 
 // Rate group timing: base clock interval and divisors are coupled to rate group names
 const Fw::TimeInterval rateGroupInterval(0, 100000);  // 10Hz base clock (100 ms)
+// S-band (SX1280) pins (BCM numbering). Change these to match your wiring.
+static constexpr U32 SBAND_RESET_GPIO = 17;
+static constexpr U32 SBAND_BUSY_GPIO = 27;
+
 Svc::RateGroupDriver::DividerSet rateGroupDivisorsSet{{{10, 0}, {20, 0}, {40, 0}, {1, 0}}};
 // Divisors: 1Hz, 0.5Hz, 0.25Hz, 10Hz
 
@@ -71,6 +75,31 @@ void configureTopology() {
         printf("[RADIO] Failed to open reset GPIO25\n");
     } else {
         printf("[RADIO] Opened reset GPIO25\n");
+    }
+
+    // ---------------- S-band (SX1280 / LAMBDA80) ----------------
+    // SPI0 CE0 -> /dev/spidev0.0 (the 433 MHz radio uses CE1)
+    if (!sbandSpi.open(0, 0, Drv::SpiFrequency::SPI_FREQUENCY_1MHZ)) {
+        printf("[SBAND] Failed to open /dev/spidev0.0\n");
+    } else {
+        printf("[SBAND] Opened /dev/spidev0.0\n");
+    }
+
+    // NRESET: output, starting HIGH (radio running)
+    if (sbandResetGpio.open("/dev/gpiochip0", SBAND_RESET_GPIO,
+                            Drv::LinuxGpioDriver::GpioConfiguration::GPIO_OUTPUT,
+                            Fw::Logic::HIGH) != Os::File::Status::OP_OK) {
+        printf("[SBAND] Failed to open reset GPIO%u\n", SBAND_RESET_GPIO);
+    } else {
+        printf("[SBAND] Opened reset GPIO%u\n", SBAND_RESET_GPIO);
+    }
+
+    // BUSY: input
+    if (sbandBusyGpio.open("/dev/gpiochip0", SBAND_BUSY_GPIO,
+                           Drv::LinuxGpioDriver::GpioConfiguration::GPIO_INPUT) != Os::File::Status::OP_OK) {
+        printf("[SBAND] Failed to open BUSY GPIO%u\n", SBAND_BUSY_GPIO);
+    } else {
+        printf("[SBAND] Opened BUSY GPIO%u\n", SBAND_BUSY_GPIO);
     }
 }
 

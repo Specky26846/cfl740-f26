@@ -3,3 +3,4 @@
 # add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/MyComponent")
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/HubTest/")
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/RadioManager/")
+add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/SbandRadioManager/")

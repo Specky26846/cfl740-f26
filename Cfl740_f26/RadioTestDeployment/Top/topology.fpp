@@ -38,6 +38,10 @@ module Cfl740_f26 {
     instance radioManager
     instance radioSpi
     instance radioResetGpio
+    instance sbandRadio
+    instance sbandSpi
+    instance sbandResetGpio
+    instance sbandBusyGpio
 
   # ----------------------------------------------------------------------
   # Pattern graph specifiers
@@ -109,6 +113,7 @@ module Cfl740_f26 {
       # 10Hz rate group
       rateGroupDriver.CycleOut[Ports_RateGroups.rateGroup_10Hz] -> rateGroup_10Hz.CycleIn
       rateGroup_10Hz.RateGroupMemberOut[0] -> radioManager.run
+      rateGroup_10Hz.RateGroupMemberOut[1] -> sbandRadio.run
 
       # 1Hz rate group
       rateGroupDriver.CycleOut[Ports_RateGroups.rateGroup_1Hz] -> rateGroup_1Hz.CycleIn
@@ -161,6 +166,17 @@ module Cfl740_f26 {
       # Uplink: radio -> frame accumulator
       radioManager.dataOut                 -> ComCcsds.FramingSubtopology.dataIn
       ComCcsds.FramingSubtopology.dataReturnOut -> radioManager.dataReturnIn
+    }
+
+    connections SbandTest {
+      # Hardware only for bring-up: not connected to a framer yet.
+      # Received packets show up as RxPacket (diagnostic) events and are then freed.
+      sbandRadio.spiWriteRead -> sbandSpi.SpiWriteRead
+      sbandRadio.resetPin     -> sbandResetGpio.gpioWrite
+      sbandRadio.busyPin      -> sbandBusyGpio.gpioRead
+
+      sbandRadio.allocate     -> ComCcsds.commsBufferManager.bufferGetCallee
+      sbandRadio.deallocate   -> ComCcsds.commsBufferManager.bufferSendIn
     }
 
   }

@@ -60,6 +60,11 @@ module Cfl740_f26 {
     stack size Default.STACK_SIZE \
     priority 39
 
+  instance sbandRadio: Cfl740_f26.SbandRadioManager base id 0x10007000 \
+    queue size Default.QUEUE_SIZE \
+    stack size Default.STACK_SIZE \
+    priority 38
+
   # ----------------------------------------------------------------------
   # Queued component instances
   # ----------------------------------------------------------------------
@@ -82,5 +87,12 @@ module Cfl740_f26 {
   instance radioSpi: Drv.LinuxSpiDriver base id 0x10015000
 
   instance radioResetGpio: Drv.LinuxGpioDriver base id 0x10016000
+
+  # S-band (SX1280 / LAMBDA80) hardware
+  instance sbandSpi: Drv.LinuxSpiDriver base id 0x10017000
+
+  instance sbandResetGpio: Drv.LinuxGpioDriver base id 0x10018000
+
+  instance sbandBusyGpio: Drv.LinuxGpioDriver base id 0x10019000
 
 }
