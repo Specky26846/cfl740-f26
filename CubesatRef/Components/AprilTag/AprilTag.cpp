@@ -4,8 +4,10 @@
 #include <Fw/Logger/Logger.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
+#include <ctime>
 #include <fstream>
 #include <iomanip>
+#include <sstream>
 
 namespace Vision {
 
@@ -97,9 +99,27 @@ bool AprilTag::processImage(const char* imagePath) {
 
     csv << std::setprecision(17);
     if (csv.tellp() == 0) {
-        csv << "frame,tag_id,tx,ty,tz,r11,r12,r13,r21,r22,r23,r31,r32,r33\n";
+        csv << "frame,timestamp,tag_id,tx,ty,tz,r11,r12,r13,r21,r22,r23,r31,r32,r33\n";
     }
-    
+
+    // Use one UTC processing timestamp for every CSV row from this frame.
+    const Fw::Time frameTime = this->getTime();
+    const std::time_t frameSeconds = frameTime.getSeconds();
+    std::tm utcTime{};
+    gmtime_r(&frameSeconds, &utcTime);
+    std::ostringstream timestamp;
+    timestamp << std::put_time(&utcTime, "%Y-%m-%dT%H:%M:%S")
+              << '.' << std::setfill('0') << std::setw(6) << frameTime.getUSeconds() << 'Z';
+
+    // Keep frames with no detections: -1 means no tag, nan means no pose.
+    if (zarray_size(detections) == 0) {
+        csv << m_frame << ',' << timestamp.str() << ",-1";
+        for (int i = 0; i < 12; ++i) {
+            csv << ",nan";
+        }
+        csv << '\n';
+    }
+
     // Start with no valid pose
     Types::TagPose poseData;
     poseData.set_valid(false);
@@ -132,7 +152,7 @@ bool AprilTag::processImage(const char* imagePath) {
             poseData.set_r33(static_cast<F32>(MATD_EL(pose.R, 2, 2)));
         }
 
-        csv << m_frame << ',' << detection->id;
+        csv << m_frame << ',' << timestamp.str() << ',' << detection->id;
         for (int row = 0; row < 3; ++row) {
             csv << ',' << MATD_EL(pose.t, row, 0);
         }
