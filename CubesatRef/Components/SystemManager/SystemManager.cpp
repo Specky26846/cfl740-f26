@@ -47,14 +47,29 @@ void SystemManager::Managers_SystemManagerStateMachine_action_runHealthCheck(
     }
 
     if (m_imuFresh) {
-        m_imuFresh = false;
-        if (!m_flightArmed) {
-            if (!m_imuStill && ++m_moveTicks >= MOVE_TICKS_REQUIRED) {
-                m_flightArmed = true;          // proven we're flying
+    m_imuFresh = false;  // we've used this reading, wait for the next one
+        if (m_flightArmed && !m_inFlight) {
+            // armed, but not flying yet: look for 30 moving samples in a row
+            if (m_imuStill) {
+                m_moveTicks = 0;  // a still sample breaks the streak
+            } else {
+                m_moveTicks = m_moveTicks + 1;
+            }
+
+            if (m_moveTicks >= MOVE_TICKS_REQUIRED) {
+                m_inFlight = true;  // proven we're flying
+                m_moveTicks = 0;
                 m_stillTicks = 0;
             }
-        } else {
-            m_stillTicks = m_imuStill ? m_stillTicks + 1 : 0;
+
+        } else if (m_inFlight) {
+            // flying: look for 30 still samples in a row
+            if (m_imuStill) {
+                m_stillTicks = m_stillTicks + 1;
+            } else {
+                m_stillTicks = 0;  // a moving sample breaks the streak
+            }
+
             if (m_stillTicks >= STILL_TICKS_REQUIRED) {
                 m_landed = true;
                 m_moveTicks = 0;
@@ -87,11 +102,11 @@ void SystemManager::Managers_SystemManagerStateMachine_action_monitorDegraded(
     // self-send escalate once we've been degraded long enough - ESCALATION_THRESHOLD is 500 ticks (~500s at 1Hz)
     // this sends us to REBOOT where we sit until a human clears it from GDS
     if (m_degradedTicks >= ESCALATION_THRESHOLD) {
-        this->systemMgrSm_sendSignal_escalate();
+       // this->systemMgrSm_sendSignal_escalate();
     }
 }
 
-// WATCHDOG: if we get here, the system has been in DEGRADED for too long and we need to reboot
+// WATCHDOG
 void SystemManager::Managers_SystemManagerStateMachine_action_performReboot(
     SmId smId,
     Managers_SystemManagerStateMachine::Signal signal)
@@ -124,35 +139,18 @@ void SystemManager::Managers_SystemManagerStateMachine_action_runLanded(
         this->statusLedSet_out(0, Fw::Logic::HIGH);
     }
     if (m_imuFresh) {
-        m_imuFresh = false;  // we've used this reading, wait for the next one
-
-        if (m_flightArmed && !m_inFlight) { // armed, but not flying yet: look for 30 moving samples in a row
-            if (m_imuStill) {
-                m_moveTicks = 0;  // a still sample breaks the streak
-            } else {
-                m_moveTicks = m_moveTicks + 1;
-            }
-
-            if (m_moveTicks >= MOVE_TICKS_REQUIRED) {
-                m_inFlight = true;  // proven we're flying
-                this->systemMgrSm_sendSignal_liftoff();
-                m_moveTicks = 0;
-                m_stillTicks = 0;
-            }
-
-        } else if (m_inFlight) { // flying: look for 30 still samples in a row
-            if (m_imuStill) {
-                m_stillTicks = m_stillTicks + 1;
-            } else {
-                m_stillTicks = 0;  // a moving sample breaks the streak
-            }
-
-            if (m_stillTicks >= STILL_TICKS_REQUIRED) {
-                m_landed = true;
-                m_moveTicks = 0;
-                this->log_ACTIVITY_HI_LandingDetected(m_uptimeSeconds);
-                this->systemMgrSm_sendSignal_landed();
-            }
+        m_imuFresh = false;
+        if (m_imuStill) {
+            m_moveTicks = 0;
+        } else {
+            m_moveTicks = m_moveTicks + 1;
+        }
+        if (m_moveTicks >= MOVE_TICKS_REQUIRED) {
+            m_landed = false;  // clear before signalling
+            m_moveTicks = 0;
+            m_stillTicks = 0;
+            this->log_ACTIVITY_HI_LandingCancelled(m_uptimeSeconds);
+            this->systemMgrSm_sendSignal_landingCancelled();
         }
     }
 }
@@ -298,6 +296,7 @@ void SystemManager::ARM_FLIGHT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq) {
     if (!m_flightArmed) {  // a repeat command must not restart detection mid-flight
         m_flightArmed = true;
         m_inFlight = false; // redeclare in case we were already flying and landed
+        m_moveTicks = 0;
         m_stillTicks = 0;
     }
     this->log_ACTIVITY_HI_FlightArmed();

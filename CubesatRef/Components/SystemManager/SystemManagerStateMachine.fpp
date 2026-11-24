@@ -13,7 +13,7 @@ module Managers {
         signal escalate       # been in DEGRADED too long - promote to REBOOT
         signal rebootComplete # GDS cleared the fault, return to NOMINAL
         signal landed         # landed, so don't escalate to REBOOT
-        signal liftoff        # lifted off
+        signal landingCancelled # landing cancelled
 
         action runHealthCheck  # NOMINAL tick: emit telemetry, keep status led solid on
         action monitorDegraded # DEGRADED tick: emit telemetry, blink led, escalate if it's been too long
@@ -27,6 +27,7 @@ module Managers {
             on gpsFault enter DEGRADED      # gps went down
             on magFault enter DEGRADED      # magnetometer went down
             on landed enter LANDED          # landed
+            on landingCancelled enter NOMINAL        # landing cancelled
         }
 
         state DEGRADED {
@@ -44,7 +45,7 @@ module Managers {
         state LANDED {
             on tick do { runLanded }        # on the ground, report and keep the led on
             on gpsFault enter DEGRADED      # only data from gps emitted after landing
-            on liftoff enter NOMINAL        # lifted off, back to normal operation
+            on landingCancelled enter NOMINAL        # landing cancelled, back to normal operation
         }
 
     }
